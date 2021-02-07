@@ -5,9 +5,17 @@
 
 #include "3RDEngine.h"
 
-#define gPI   3.14159265358979323846f
-#define gPI_2 1.57079632679489661923f
-#define gPI_4 0.78539816339744830962f
+constexpr double gPI = 3.14159265358979323846;
+constexpr double gPI_2 = 1.57079632679489661923;
+constexpr double gPI_4 = 0.78539816339744830962;
+constexpr double gPI_8 = 0.39269908169872415480;
+constexpr double gPI_16 = 0.19634954084936207740;
+
+constexpr float gPI_f = 3.14159265358979323846f;
+constexpr float gPI_2_f = 1.57079632679489661923f;
+constexpr float gPI_4_f = 0.78539816339744830962f;
+constexpr float gPI_8_f = 0.39269908169872415480f;
+constexpr float gPI_16_f = 0.19634954084936207740f;
 
 struct gVector4
 {
@@ -20,18 +28,39 @@ struct gVector4
         };
     };
 
+    _3RDE_API_ static const size_t Size;
+    _3RDE_API_ static const gVector4 Right;
+    _3RDE_API_ static const gVector4 Up;
+    _3RDE_API_ static const gVector4 Front;
+
     _3RDE_API_ gVector4();
+    _3RDE_API_ gVector4(const float* p); // 4 float
     _3RDE_API_ gVector4(float value);
     _3RDE_API_ gVector4(float x, float y, float z, float w);
     _3RDE_API_ gVector4(const gVector4& other);
 
+    _3RDE_API_ void normalize( );
+    _3RDE_API_ float lenght() const;
+    _3RDE_API_ float sqLenght() const;
+
+    _3RDE_API_ void set( float value );
+    _3RDE_API_ void set( float x, float y, float z, float w );
+
     _3RDE_API_ void operator = (const gVector4& other);
+
+    _3RDE_API_ gVector4 operator + () const;
+    _3RDE_API_ gVector4 operator - () const;
+
+    _3RDE_API_ gVector4 operator + (const gVector4& other) const;
+    _3RDE_API_ gVector4 operator - (const gVector4& other) const;
 
     _3RDE_API_ void operator += (const gVector4& other);
     _3RDE_API_ void operator -= (const gVector4& other);
     _3RDE_API_ void operator *= ( float value );
+    _3RDE_API_ void operator /= (float value);
 
-    _3RDE_API_ float operator * ( const gVector4& other ); // dot product of two vecs
+    _3RDE_API_ float operator * ( const gVector4& other ) const; // dot product of two vecs
+    _3RDE_API_ gVector4 operator * (float value) const; // scale vec
 };
 
 struct gVector3
@@ -45,27 +74,49 @@ struct gVector3
         };
     };
 
+    _3RDE_API_ static const size_t Size;
+    _3RDE_API_ static const gVector3 Right;
+    _3RDE_API_ static const gVector3 Up;
+    _3RDE_API_ static const gVector3 Front;
+    
     _3RDE_API_ gVector3();
+    _3RDE_API_ gVector3(const float* p); // 3 float
     _3RDE_API_ gVector3(float value);
     _3RDE_API_ gVector3(float x, float y, float z);
     _3RDE_API_ gVector3(const gVector3& other);
 
+    _3RDE_API_ void normalize();
+    _3RDE_API_ float lenght() const;
+    _3RDE_API_ float sqLenght() const;
+    _3RDE_API_ float distanceTo(const gVector3& other) const;
+
+    _3RDE_API_ void set(float value);
+    _3RDE_API_ void set(float x, float y, float z);
+
     _3RDE_API_ void operator = (const gVector3& other);
+
+    _3RDE_API_ gVector3 operator + () const;
+    _3RDE_API_ gVector3 operator - () const;
+
+    _3RDE_API_ gVector3 operator + (const gVector3& other) const;
+    _3RDE_API_ gVector3 operator - (const gVector3& other) const;
 
     _3RDE_API_ void operator += (const gVector3& other);
     _3RDE_API_ void operator -= (const gVector3& other);
     _3RDE_API_ void operator *= (float value);
+    _3RDE_API_ void operator /= (float value);
 
     _3RDE_API_ void operator ^= ( const gVector3& other ); // cross product with other vec
 
-    _3RDE_API_ float operator * (const gVector3& other); // dot product of two vecs
-    _3RDE_API_ const gVector3 operator ^ (const gVector3& other); // cross product of two vecs
+    _3RDE_API_ float operator * (const gVector3& other) const; // dot product of two vecs
+    _3RDE_API_ gVector3 operator * (float value) const; // scale vec
+    _3RDE_API_ gVector3 operator ^ (const gVector3& other) const; // cross product of two vecs
 
 };
 
 struct gVector2
 {
-    union u
+    union
     {
         float v[2];
         struct
@@ -73,19 +124,76 @@ struct gVector2
             float x, y;
         };
     };
+
+    _3RDE_API_ static const size_t Size;
+    _3RDE_API_ static const gVector2 Up;
+    _3RDE_API_ static const gVector2 Right;
+
+    _3RDE_API_ gVector2();
+    _3RDE_API_ gVector2( const float* p ); // 2 float
+    _3RDE_API_ gVector2( float value );
+    _3RDE_API_ gVector2( float x, float y );
+    _3RDE_API_ gVector2( const gVector2& other );
+
+    _3RDE_API_ void normalize();
+    _3RDE_API_ float lenght() const;
+    _3RDE_API_ float sqLenght() const;
+
+    _3RDE_API_ void set(float value);
+    _3RDE_API_ void set(float x, float y);
+
+    _3RDE_API_ void operator = (const gVector2& other);
+
+    _3RDE_API_ gVector2 operator + () const;
+    _3RDE_API_ gVector2 operator - () const;
+
+    _3RDE_API_ gVector2 operator + (const gVector2& other) const;
+    _3RDE_API_ gVector2 operator - (const gVector2& other) const;
+
+    _3RDE_API_ void operator += (const gVector2& other);
+    _3RDE_API_ void operator -= (const gVector2& other);
+    _3RDE_API_ void operator *= (float value);
+    _3RDE_API_ void operator /= (float value);
+
+    _3RDE_API_ float operator * (const gVector2& other) const; // dot product of two vecs
+    _3RDE_API_ gVector2 operator * (float value) const; // scale vec
+
+
 };
 
 struct gPlane
 {
-    union u
+    union
     {
         float p[4];
         struct
         {
             float a, b, c, d;
         };
+        struct
+        {
+            gVector3 n;
+            float d;
+        };
     };
 
+    _3RDE_API_ gPlane();
+    _3RDE_API_ gPlane( float a, float b, float c, float d );
+    _3RDE_API_ gPlane( const gVector3& p0, const gVector3& p1, const gVector3& p2 );
+
+    _3RDE_API_ void fromEquationConstants( float a, float b, float c, float d ); // build plane equation constants
+    _3RDE_API_ void fromPointNormal( const gVector3& p, const gVector3& n ); // build plane by pointand non - normalized normal
+    _3RDE_API_ void fromPointNormalizedNormal(const gVector3& p, const gVector3& n); // build plane by point & normalized normal
+    _3RDE_API_ void fromPointVectors(const gVector3& p, const gVector3& v0, const gVector3& v1); // build plane by two vecs of point
+    _3RDE_API_ void fromPoints( const gVector3& p0, const gVector3& p1, const gVector3& p2 ); // build plane by 3 points
+
+    _3RDE_API_ void normalize(); // normalize plane
+
+    _3RDE_API_ gVector3 projectPointToPlane( const gVector3& p) const; // project point to plane in plane direction ( plane must be normalized! )
+
+    _3RDE_API_ float getDistanceTo(const gVector3& p) const;
+
+    _3RDE_API_ static const size_t Size;
 };
 
 struct gQuaternion
@@ -99,10 +207,22 @@ struct gQuaternion
         };
     };
 
-    _3RDE_API_ gQuaternion(const float* v); // 4 floats
-    _3RDE_API_ gQuaternion(float x, float y, float z, float w);
+    _3RDE_API_ static const size_t Size;
+    _3RDE_API_ static const gQuaternion Identity;
 
-    _3RDE_API_ void identity();
+    _3RDE_API_ gQuaternion();
+    _3RDE_API_ gQuaternion( const float* v ); // 4 floats
+    _3RDE_API_ gQuaternion( float x, float y, float z, float w );
+    _3RDE_API_ gQuaternion( gVector3 axis, float angle );
+    _3RDE_API_ gQuaternion( float pitch, float yaw, float roll );
+
+    _3RDE_API_ void identity(); // make identity quat
+
+    _3RDE_API_ void fromEquationConstants(float x, float y, float z, float w ); //build quat from constants
+    _3RDE_API_ void fromAxisAngle( gVector3 axis, float angle );  // build quat from axis & angle in radians
+    _3RDE_API_ void fromPitchYawRoll( float pitch, float yaw, float roll ); // build quat pitch, yaw, roll angles in radians
+    _3RDE_API_ gVector3 getPitchYawRoll() const; // get pitch, yaw, roll angles equivalent to quat
+
 };
 
 
@@ -118,14 +238,18 @@ struct gMatrix4
         };
 
         struct {
-            gVector4 _v1, _v2, _v3, _v4;
+            gVector4 v1, v2, v3, v4;
         };
 
-        float _m[4][4];
-        float _p[16];
+        float m[4][4];
+        float p[16];
     };
 
+    _3RDE_API_ static const size_t Size;
+    _3RDE_API_ static const gMatrix4 Identity;
+
     _3RDE_API_ gMatrix4();
+    _3RDE_API_ gMatrix4(const float* m);  //16 floats
     _3RDE_API_ gMatrix4(bool isIdentity);
     _3RDE_API_ gMatrix4(const gMatrix4& other);
 
