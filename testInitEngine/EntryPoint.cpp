@@ -14,8 +14,7 @@
 
 void mathlib_test()
 {
-	gMatrix4 m;
-	m.identity();
+	gMatrix4 m(true);
 	float d = m.determinant();
 
 	gVector2 v2;
@@ -76,7 +75,7 @@ void mathlib_test()
 
 
 	// plane test project to plane
-	
+
 	p.fromPointNormal(gVector3(10.f, 0.f, 0.f), gVector3(1.f, 0.f, 0.f));
 	p.normalize();
 	gVector3 projected = p.projectPointToPlane(gVector3(0.f, 0.f, 0.f));
@@ -92,24 +91,93 @@ void mathlib_test()
 		q.identity();
 
 		D3DXQuaternionRotationYawPitchRoll(&quat, 0.f, -gPI_4_f, 0.f);
-		q.fromPitchYawRoll( -gPI_4_f, 0.f, 0.f );
+		q.fromPitchYawRoll(-gPI_4_f, 0.f, 0.f);
 		angles = q.getPitchYawRoll();
 
 		D3DXQuaternionRotationYawPitchRoll(&quat, -gPI_4_f, 0.f, 0.f);
-		q.fromPitchYawRoll( 0.f, -gPI_4_f, 0.f );
+		q.fromPitchYawRoll(0.f, -gPI_4_f, 0.f);
 		angles = q.getPitchYawRoll();
 
 		D3DXQuaternionRotationYawPitchRoll(&quat, 0.f, 0.f, -gPI_4_f);
-		q.fromPitchYawRoll( 0.f, 0.f, -gPI_4_f );
+		q.fromPitchYawRoll(0.f, 0.f, -gPI_4_f);
 		angles = q.getPitchYawRoll();
 
 		D3DXQuaternionRotationYawPitchRoll(&quat, -gPI_8_f, -gPI_16_f, -gPI_4_f);
-		q.fromPitchYawRoll( -gPI_16_f, -gPI_8_f, -gPI_4_f);
+		q.fromPitchYawRoll(-gPI_16_f, -gPI_8_f, -gPI_4_f);
 		angles = q.getPitchYawRoll();
 
 		q.identity();
 	}
 	
+	{
+		//test matrixes
+		D3DXMATRIX dxMrX, dxMrY, dxMrZ, invertedX, invertedY, invertedZ;
+		float det;
+		//rot
+
+		D3DXMatrixRotationX(&dxMrX, gPI_16_f);
+		D3DXMatrixRotationY(&dxMrY, gPI_16_f);
+		D3DXMatrixRotationZ(&dxMrZ, gPI_16_f);
+
+		D3DXMatrixInverse(&invertedX, &det, &dxMrX);
+		D3DXMatrixInverse(&invertedY, &det, &dxMrY);
+		D3DXMatrixInverse(&invertedZ, &det, &dxMrZ);
+
+		gMatrix4 gMX, gMY, gMZ, gInvX, gInvY, gInvZ;
+
+		gMX.setRotationX(gPI_16_f);
+		gMY.setRotationY(gPI_16_f);
+		gMZ.setRotationZ(gPI_16_f);
+
+		gInvX = gMX;
+		gInvY = gMY;
+		gInvZ = gMZ;
+
+		gInvX.inverse();
+		gInvY.inverse();
+		gInvZ.inverse();
+
+		//transl
+		D3DXMatrixTranslation(&dxMrX, 100.f, 0.f, 0.f);
+		D3DXMatrixTranslation(&dxMrY, 0.f, 100.f, 0.f);
+		D3DXMatrixTranslation(&dxMrZ, 0.f, 0.f, 100.f);
+
+		D3DXMatrixInverse(&invertedX, &det, &dxMrX);
+		D3DXMatrixInverse(&invertedY, &det, &dxMrY);
+		D3DXMatrixInverse(&invertedZ, &det, &dxMrZ);
+
+		gMX.setTranslation(100.f, 0.f, 0.f);
+		gMY.setTranslation(0.f, 100.f, 0.f);
+		gMZ.setTranslation(0.f, 0.f, 100.f);
+
+		gInvX = gMX;
+		gInvY = gMY;
+		gInvZ = gMZ;
+
+		gInvX.inverse();
+		gInvY.inverse();
+		gInvZ.inverse();
+	}
+
+	//test mat concat
+	{
+		gMatrix4 matTr, matRot, matRes, matRes2;
+		matTr.setTranslation(100.f, 0.f, 100.f);
+		matRot.setRotationX( gPI_8_f );
+		matRes = matRot * matTr;
+
+		matRes2 = matRot;
+		matRes2 *= matTr;
+		int a = 2;
+	}
+
+}
+
+void testASM()
+{
+	float* pResult = (float*)_aligned_malloc(16 * sizeof(float), 16);
+
+	delete[] pResult;
 }
 
 int WINAPI WinMain
@@ -123,6 +191,7 @@ int WINAPI WinMain
 	SP3RDENGINE engine = Create3RDEngine();
 
 	mathlib_test();
+	testASM();
 
 	engine->initialize(eRENDERAPI::RA_DX12);
 	engine->finalize();

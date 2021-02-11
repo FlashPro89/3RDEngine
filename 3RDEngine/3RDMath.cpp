@@ -1,12 +1,13 @@
 #include "../include/3RDMath.h"
 #include <math.h>
 #include <string>
+#include <xmmintrin.h>
 
-//
+
 constexpr float _m_id_[] = {	1.f, 0.f, 0.f, 0.f,
-							0.f, 1.f, 0.f, 1.f,
-							0.f, 0.f, 1.f, 0.f,
-							0.f, 0.f, 0.f, 1.f		};
+								0.f, 1.f, 0.f, 1.f,
+								0.f, 0.f, 1.f, 0.f,
+								0.f, 0.f, 0.f, 1.f		};
 
 const size_t gPlane::Size = sizeof(gPlane);
 const size_t gMatrix4::Size = sizeof(gMatrix4);
@@ -14,19 +15,366 @@ const size_t gQuaternion::Size = sizeof(gQuaternion);
 const size_t gVector4::Size = sizeof(gVector4);
 const size_t gVector3::Size = sizeof(gVector3);
 const size_t gVector2::Size = sizeof(gVector2);
+
+static gMatrix4 s_temp;
+
+const gVector4 gMatrix4::V0_Id = gVector4(1.f, 0.f, 0.f, 0.f);
+const gVector4 gMatrix4::V1_Id = gVector4(0.f, 1.f, 0.f, 0.f);
+const gVector4 gMatrix4::V2_Id = gVector4(0.f, 0.f, 1.f, 0.f);
+const gVector4 gMatrix4::V3_Id = gVector4(0.f, 0.f, 0.f, 1.f);
+
 const gMatrix4 gMatrix4::Identity = gMatrix4( (const float*)_m_id_ );
 const gQuaternion gQuaternion::Identity = gQuaternion( 0.f, 0.f, 0.f, 1.f );
 
 const gVector2 gVector2::Up(0.f, 1.f);
 const gVector2 gVector2::Right(1.f, 0.f);
+const gVector2 gVector2::Zero(0.f, 0.f);
+
 
 const gVector3 gVector3::Right(1.f, 0.f, 0.f);
 const gVector3 gVector3::Up(0.f, 1.f, 0.f);
 const gVector3 gVector3::Front(0.f, 0.f, 1.f);
+const gVector3 gVector3::Zero(0.f, 0.f, 0.f);
+
 
 const gVector4 gVector4::Right(1.f, 0.f, 0.f, 1.f);
 const gVector4 gVector4::Up(0.f, 1.f, 0.f, 1.f);
 const gVector4 gVector4::Front(0.f, 0.f, 1.f, 1.f);
+const gVector4 gVector4::Zero(0.f, 0.f, 0.f, 0.f);
+
+#define _BUILD_WITH_SSE_
+
+// from GitHub free code
+inline void m_invert_noopt(const float* src, float* dst)
+{
+	float det;
+
+	/* Compute adjoint: */
+
+	dst[0] =
+		+src[5] * src[10] * src[15]
+		- src[5] * src[11] * src[14]
+		- src[9] * src[6] * src[15]
+		+ src[9] * src[7] * src[14]
+		+ src[13] * src[6] * src[11]
+		- src[13] * src[7] * src[10];
+
+	dst[1] =
+		-src[1] * src[10] * src[15]
+		+ src[1] * src[11] * src[14]
+		+ src[9] * src[2] * src[15]
+		- src[9] * src[3] * src[14]
+		- src[13] * src[2] * src[11]
+		+ src[13] * src[3] * src[10];
+
+	dst[2] =
+		+src[1] * src[6] * src[15]
+		- src[1] * src[7] * src[14]
+		- src[5] * src[2] * src[15]
+		+ src[5] * src[3] * src[14]
+		+ src[13] * src[2] * src[7]
+		- src[13] * src[3] * src[6];
+
+	dst[3] =
+		-src[1] * src[6] * src[11]
+		+ src[1] * src[7] * src[10]
+		+ src[5] * src[2] * src[11]
+		- src[5] * src[3] * src[10]
+		- src[9] * src[2] * src[7]
+		+ src[9] * src[3] * src[6];
+
+	dst[4] =
+		-src[4] * src[10] * src[15]
+		+ src[4] * src[11] * src[14]
+		+ src[8] * src[6] * src[15]
+		- src[8] * src[7] * src[14]
+		- src[12] * src[6] * src[11]
+		+ src[12] * src[7] * src[10];
+
+	dst[5] =
+		+src[0] * src[10] * src[15]
+		- src[0] * src[11] * src[14]
+		- src[8] * src[2] * src[15]
+		+ src[8] * src[3] * src[14]
+		+ src[12] * src[2] * src[11]
+		- src[12] * src[3] * src[10];
+
+	dst[6] =
+		-src[0] * src[6] * src[15]
+		+ src[0] * src[7] * src[14]
+		+ src[4] * src[2] * src[15]
+		- src[4] * src[3] * src[14]
+		- src[12] * src[2] * src[7]
+		+ src[12] * src[3] * src[6];
+
+	dst[7] =
+		+src[0] * src[6] * src[11]
+		- src[0] * src[7] * src[10]
+		- src[4] * src[2] * src[11]
+		+ src[4] * src[3] * src[10]
+		+ src[8] * src[2] * src[7]
+		- src[8] * src[3] * src[6];
+
+	dst[8] =
+		+src[4] * src[9] * src[15]
+		- src[4] * src[11] * src[13]
+		- src[8] * src[5] * src[15]
+		+ src[8] * src[7] * src[13]
+		+ src[12] * src[5] * src[11]
+		- src[12] * src[7] * src[9];
+
+	dst[9] =
+		-src[0] * src[9] * src[15]
+		+ src[0] * src[11] * src[13]
+		+ src[8] * src[1] * src[15]
+		- src[8] * src[3] * src[13]
+		- src[12] * src[1] * src[11]
+		+ src[12] * src[3] * src[9];
+
+	dst[10] =
+		+src[0] * src[5] * src[15]
+		- src[0] * src[7] * src[13]
+		- src[4] * src[1] * src[15]
+		+ src[4] * src[3] * src[13]
+		+ src[12] * src[1] * src[7]
+		- src[12] * src[3] * src[5];
+
+	dst[11] =
+		-src[0] * src[5] * src[11]
+		+ src[0] * src[7] * src[9]
+		+ src[4] * src[1] * src[11]
+		- src[4] * src[3] * src[9]
+		- src[8] * src[1] * src[7]
+		+ src[8] * src[3] * src[5];
+
+	dst[12] =
+		-src[4] * src[9] * src[14]
+		+ src[4] * src[10] * src[13]
+		+ src[8] * src[5] * src[14]
+		- src[8] * src[6] * src[13]
+		- src[12] * src[5] * src[10]
+		+ src[12] * src[6] * src[9];
+
+	dst[13] =
+		+src[0] * src[9] * src[14]
+		- src[0] * src[10] * src[13]
+		- src[8] * src[1] * src[14]
+		+ src[8] * src[2] * src[13]
+		+ src[12] * src[1] * src[10]
+		- src[12] * src[2] * src[9];
+
+	dst[14] =
+		-src[0] * src[5] * src[14]
+		+ src[0] * src[6] * src[13]
+		+ src[4] * src[1] * src[14]
+		- src[4] * src[2] * src[13]
+		- src[12] * src[1] * src[6]
+		+ src[12] * src[2] * src[5];
+
+	dst[15] =
+		+src[0] * src[5] * src[10]
+		- src[0] * src[6] * src[9]
+		- src[4] * src[1] * src[10]
+		+ src[4] * src[2] * src[9]
+		+ src[8] * src[1] * src[6]
+		- src[8] * src[2] * src[5];
+
+	/* Compute determinant: */
+
+	det = +src[0] * dst[0] + src[1] * dst[4] + src[2] * dst[8] + src[3] * dst[12];
+
+	/* Multiply adjoint with reciprocal of determinant: */
+
+	det = 1.0f / det;
+
+	dst[0] *= det;
+	dst[1] *= det;
+	dst[2] *= det;
+	dst[3] *= det;
+	dst[4] *= det;
+	dst[5] *= det;
+	dst[6] *= det;
+	dst[7] *= det;
+	dst[8] *= det;
+	dst[9] *= det;
+	dst[10] *= det;
+	dst[11] *= det;
+	dst[12] *= det;
+	dst[13] *= det;
+	dst[14] *= det;
+	dst[15] *= det;
+}
+
+// The original code as provided by Intel in
+// "Streaming SIMD Extensions - Inverse of 4x4 Matrix"
+// (ftp://download.intel.com/design/pentiumiii/sml/24504301.pdf)
+
+inline void m_invert_sse(const float* src, float* dst)
+{
+	__m128 minor0, minor1, minor2, minor3;
+	__m128 row0, row2;
+	__m128 det;// , tmp1;
+
+	// added init var, its slowly
+	__m128 tmp1 = _mm_loadh_pi(_mm_load_ps(src), (__m64*)(src + 4));
+	__m128 row1 = _mm_loadh_pi(_mm_load_ps(src + 8), (__m64*)(src + 12));
+	__m128 row3 = _mm_loadh_pi(_mm_load_ps(src + 10), (__m64*)(src + 14));
+
+
+	tmp1 = _mm_loadh_pi(_mm_loadl_pi(tmp1, (__m64*)(src)), (__m64*)(src + 4));
+	row1 = _mm_loadh_pi(_mm_loadl_pi(row1, (__m64*)(src + 8)), (__m64*)(src + 12));
+
+	row0 = _mm_shuffle_ps(tmp1, row1, 0x88);
+	row1 = _mm_shuffle_ps(row1, tmp1, 0xDD);
+
+	tmp1 = _mm_loadh_pi(_mm_loadl_pi(tmp1, (__m64*)(src + 2)), (__m64*)(src + 6));
+	row3 = _mm_loadh_pi(_mm_loadl_pi(row3, (__m64*)(src + 10)), (__m64*)(src + 14));
+
+	row2 = _mm_shuffle_ps(tmp1, row3, 0x88);
+	row3 = _mm_shuffle_ps(row3, tmp1, 0xDD);
+
+	tmp1 = _mm_mul_ps(row2, row3);
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0xB1);
+
+	minor0 = _mm_mul_ps(row1, tmp1);
+	minor1 = _mm_mul_ps(row0, tmp1);
+
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0x4E);
+
+	minor0 = _mm_sub_ps(_mm_mul_ps(row1, tmp1), minor0);
+	minor1 = _mm_sub_ps(_mm_mul_ps(row0, tmp1), minor1);
+	minor1 = _mm_shuffle_ps(minor1, minor1, 0x4E);
+
+	tmp1 = _mm_mul_ps(row1, row2);
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0xB1);
+
+	minor0 = _mm_add_ps(_mm_mul_ps(row3, tmp1), minor0);
+	minor3 = _mm_mul_ps(row0, tmp1);
+
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0x4E);
+
+	minor0 = _mm_sub_ps(minor0, _mm_mul_ps(row3, tmp1));
+	minor3 = _mm_sub_ps(_mm_mul_ps(row0, tmp1), minor3);
+	minor3 = _mm_shuffle_ps(minor3, minor3, 0x4E);
+
+	tmp1 = _mm_mul_ps(_mm_shuffle_ps(row1, row1, 0x4E), row3);
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0xB1);
+	row2 = _mm_shuffle_ps(row2, row2, 0x4E);
+
+	minor0 = _mm_add_ps(_mm_mul_ps(row2, tmp1), minor0);
+	minor2 = _mm_mul_ps(row0, tmp1);
+
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0x4E);
+
+	minor0 = _mm_sub_ps(minor0, _mm_mul_ps(row2, tmp1));
+	minor2 = _mm_sub_ps(_mm_mul_ps(row0, tmp1), minor2);
+	minor2 = _mm_shuffle_ps(minor2, minor2, 0x4E);
+
+	tmp1 = _mm_mul_ps(row0, row1);
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0xB1);
+
+	minor2 = _mm_add_ps(_mm_mul_ps(row3, tmp1), minor2);
+	minor3 = _mm_sub_ps(_mm_mul_ps(row2, tmp1), minor3);
+
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0x4E);
+
+	minor2 = _mm_sub_ps(_mm_mul_ps(row3, tmp1), minor2);
+	minor3 = _mm_sub_ps(minor3, _mm_mul_ps(row2, tmp1));
+
+	tmp1 = _mm_mul_ps(row0, row3);
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0xB1);
+
+	minor1 = _mm_sub_ps(minor1, _mm_mul_ps(row2, tmp1));
+	minor2 = _mm_add_ps(_mm_mul_ps(row1, tmp1), minor2);
+
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0x4E);
+
+	minor1 = _mm_add_ps(_mm_mul_ps(row2, tmp1), minor1);
+	minor2 = _mm_sub_ps(minor2, _mm_mul_ps(row1, tmp1));
+
+	tmp1 = _mm_mul_ps(row0, row2);
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0xB1);
+
+	minor1 = _mm_add_ps(_mm_mul_ps(row3, tmp1), minor1);
+	minor3 = _mm_sub_ps(minor3, _mm_mul_ps(row1, tmp1));
+
+	tmp1 = _mm_shuffle_ps(tmp1, tmp1, 0x4E);
+
+	minor1 = _mm_sub_ps(minor1, _mm_mul_ps(row3, tmp1));
+	minor3 = _mm_add_ps(_mm_mul_ps(row1, tmp1), minor3);
+
+	det = _mm_mul_ps(row0, minor0);
+	det = _mm_add_ps(_mm_shuffle_ps(det, det, 0x4E), det);
+	det = _mm_add_ss(_mm_shuffle_ps(det, det, 0xB1), det);
+
+	tmp1 = _mm_rcp_ss(det);
+
+	det = _mm_sub_ss(_mm_add_ss(tmp1, tmp1), _mm_mul_ss(det, _mm_mul_ss(tmp1, tmp1)));
+	det = _mm_shuffle_ps(det, det, 0x00);
+
+	minor0 = _mm_mul_ps(det, minor0);
+	_mm_storel_pi((__m64*)(dst), minor0);
+	_mm_storeh_pi((__m64*)(dst + 2), minor0);
+
+	minor1 = _mm_mul_ps(det, minor1);
+	_mm_storel_pi((__m64*)(dst + 4), minor1);
+	_mm_storeh_pi((__m64*)(dst + 6), minor1);
+
+	minor2 = _mm_mul_ps(det, minor2);
+	_mm_storel_pi((__m64*)(dst + 8), minor2);
+	_mm_storeh_pi((__m64*)(dst + 10), minor2);
+
+	minor3 = _mm_mul_ps(det, minor3);
+	_mm_storel_pi((__m64*)(dst + 12), minor3);
+	_mm_storeh_pi((__m64*)(dst + 14), minor3);
+}
+
+/*
+* 
+void m_mul_sse_dot(const float* a, const float* b, float* r)
+{
+	__m128 a_line, b_line, r_line;
+	float mc[16] __attribute__((aligned(16)));  // 16-byte aligned temp array
+	for (int i = 0; i < 16; i += 4) {
+		b_line = _mm_load_ps(&b[i]);              // b_line = vec4(column(b, i))
+												  // remember that we are column-major
+		for (int j = 0; j < 4; j++) {
+			a_line = _mm_set_ps(a[j + 12], a[j + 8], a[j + 4], a[j]);
+			// a_line = vec4(row(a, j))
+			// note that SSE is little-endian
+			r_line = _mm_mul_ps(a_line, b_line);    // r_line = a_line * b_line
+			_mm_store_ps(mc, r_line);               // copy r_line to memory
+			r[i + j] = mc[0] + mc[1] + mc[2] + mc[3];       // r[i][j] = sum(r_line)
+													//         = dot(a_line, b_line)
+		}
+	}
+}
+
+*/
+
+
+__inline void m_mul_noopt_dot(const float* a, const float* b, float* r)
+{
+	unsigned int rindex = 0;
+
+
+	for (int i = 0; i < 4; i++) //row
+	{
+		for (int j = 0; j < 4; j++) //column
+		{
+			rindex = i * 4 + j;
+			r[rindex] = 0;
+			
+			for (int k = 0; k < 4; k++)
+			{
+				r[rindex] += a[i * 4 + k] * b[k * 4 + j];
+			}
+			
+		}
+	}
+}
+
+
 
 // ------------------------------------
 //
@@ -649,13 +997,13 @@ gVector3 gQuaternion::getPitchYawRoll() const // get pitch, yaw, roll angles equ
 
 gMatrix4::gMatrix4() 
 { 
-	identity(); 
+	//setIdentity();  //opti
 }
 
 gMatrix4::gMatrix4( bool isIdentity ) 
 { 
-	if (isIdentity) 
-		identity(); 
+	if (isIdentity)
+		setIdentity();
 }
 
 gMatrix4::gMatrix4( const float* m )
@@ -668,7 +1016,21 @@ gMatrix4::gMatrix4(const gMatrix4& other)
 	memcpy_s( p, gMatrix4::Size, other.p, gMatrix4::Size );
 }
 
-void gMatrix4::identity()
+bool  gMatrix4::inverse()
+{
+	gMatrix4 temp = *this;
+	
+#ifdef _BUILD_WITH_SSE_
+	m_invert_sse(temp.p, p);
+#else
+	invert_noopt(temp.p, p);
+#endif
+
+	return true;
+}
+
+
+void gMatrix4::setIdentity()
 {
 	memcpy_s( p, gMatrix4::Size, gMatrix4::Identity.p, gMatrix4::Size );
 }
@@ -714,19 +1076,195 @@ const gMatrix4& gMatrix4::transpose()
 	return *this;
 }
 
-void gMatrix4::translation( float x, float y, float z )
+void gMatrix4::setTranslation( float x, float y, float z )
 {
-	identity();
-	v4 = gVector4( x, y, z, 1.f );
+	v[0] = V0_Id; v[1] = V1_Id; v[2] = V2_Id;
+	v[3] = gVector4(x, y, z, 1.f);
 }
 
-void gMatrix4::translation(const gVector4& v)  // use first 3 dim
+void gMatrix4::setTranslation(const gVector4& _v)  // use first 3 dim
 {
-	identity();
-	v4 = gVector4(v.x, v.y, v.z, 1.f);
+	v[0] = V0_Id; v[1] = V1_Id; v[2] = V2_Id;
+	v[3] = gVector4(_v.x, _v.y, _v.z, 1.f);
+}
+
+void gMatrix4::setTranslation(const gVector3& _v)
+{
+	v[0] = V0_Id; v[1] = V1_Id; v[2] = V2_Id;
+	v[3] = gVector4(_v.x, _v.y, _v.z, 1.f);
+}
+
+void gMatrix4::setTranslation(const float* _v)  // 3 float ( unsafe )
+{
+	v[0] = V0_Id; v[1] = V1_Id; v[2] = V2_Id;
+	v[3] = gVector4( _v[0], _v[1], _v[2], 1.f);
+}
+
+void gMatrix4::setRotationX(float angle)
+{
+	float sinA = sinf(angle);
+	float cosA = cosf(angle);
+
+	v[0] = V0_Id;
+	v[1] = gVector4( 0.f, cosA, sinA, 0.f );
+	v[2] = gVector4( 0.f, -sinA, cosA, 0.f );
+	v[3] = V3_Id;
+}
+
+void gMatrix4::setRotationY(float angle)
+{
+	float sinA = sinf(angle);
+	float cosA = cosf(angle);
+
+	v[0] = gVector4(cosA, 0.f, -sinA, 0.f);
+	v[1] = V1_Id;
+	v[2] = gVector4(sinA, 0, cosA, 0.f);
+	v[3] = V3_Id;
+}
+
+void gMatrix4::setRotationZ(float angle)
+{
+	float sinA = sinf(angle);
+	float cosA = cosf(angle);
+
+	v[0] = gVector4(cosA, sinA, 0.f, 0.f);
+	v[1] = gVector4(-sinA, cosA, 0.f,  0.f);
+	v[2] = V2_Id;
+	v[3] = V3_Id;
+}
+
+void gMatrix4::setRotationByQuat(const gQuaternion& q)
+{
+	float ww = 2.0f * q.w;
+	float xx = 2.0f * q.x;
+	float yy = 2.0f * q.y;
+	float zz = 2.0f * q.z;
+
+	_11 = 1.0f - yy * q.y - zz * q.z;
+	_12 = xx * q.y + ww * q.z;
+	_13 = xx * q.z - ww * q.y;
+	_14 = 0.0f;
+
+	_21 = xx * q.y - ww * q.z;
+	_22 = 1.0f - xx * q.x - zz * q.z;
+	_23 = yy * q.z + ww * q.x;
+	_24 = 0.0f;
+
+	_31 = xx * q.z + ww * q.y;
+	_32 = yy * q.z - ww * q.x;
+	_33 = 1.0f - xx * q.x - yy * q.y;
+	_34 = 0.0f;
+
+	v[3] = V3_Id;
+}
+
+void gMatrix4::setRotationByQuat(const float* _v)  // 4 float
+{
+	float ww = 2.0f * _v[3];
+	float xx = 2.0f * _v[0];
+	float yy = 2.0f * _v[1];
+	float zz = 2.0f * _v[2];
+
+	_11 = 1.0f - yy * _v[1] - zz * _v[2];
+	_12 = xx * _v[1] + ww * _v[2];
+	_13 = xx * _v[2] - ww * _v[1];
+	_14 = 0.0f;
+
+	_21 = xx * _v[1] - ww * _v[2];
+	_22 = 1.0f - xx * _v[0] - zz * _v[2];
+	_23 = yy * _v[2] + ww * _v[0];
+	_24 = 0.0f;
+
+	_31 = xx * _v[2] + ww * _v[1];
+	_32 = yy * _v[2] - ww * _v[0];
+	_33 = 1.0f - xx * _v[0] - yy * _v[1];
+	_34 = 0.0f;
+
+	v[3] = V3_Id;
+}
+
+void gMatrix4::setRotationXYZ(float rx, float ry, float rz)
+{
+
+}
+
+void gMatrix4::setRotationXYZ(const float* v)  // 3 float
+{
+
+}
+
+void gMatrix4::setScale(float sx, float sy, float sz)
+{
+	v[0] = gVector4(sx, 0.f, 0.f, 0.f);
+	v[1] = gVector4(0.f, sy, 0.f, 0.f);
+	v[2] = gVector4(0.f, 0.f, sz, 0.f);
+	v[3] = V3_Id;
+}
+
+void gMatrix4::setScale(const gVector3& _v)
+{
+	v[0] = gVector4(_v.x, 0.f, 0.f, 0.f);
+	v[1] = gVector4(0.f, _v.y, 0.f, 0.f);
+	v[2] = gVector4(0.f, 0.f, _v.z, 0.f);
+	v[3] = V3_Id;
+}
+
+void gMatrix4::setScale(const float* _v)  // 3 float
+{
+	v[0] = gVector4(_v[0], 0.f, 0.f, 0.f);
+	v[1] = gVector4(0.f, _v[1], 0.f, 0.f);
+	v[2] = gVector4(0.f, 0.f, _v[2], 0.f);
+	v[3] = V3_Id;
+}
+
+// frox d3dx lib
+void gMatrix4::setPerspetiveRHFOV( float fowY, float aspectRatio, float zn, float zf )
+{
+	float zf_zn = zf - zn;
+	if( (fabs(fowY)>=gPI_f) || !( zf_zn != 0 ) || !(aspectRatio>=0 ))
+		return;  // invalig diaposone
+
+	float yScale = 1 / tanf( fowY / 2.f );
+	float xScale = yScale / aspectRatio;
+
+	zf_zn = zf / zf_zn;
+
+	v[0] = gVector4(xScale, 0.f, 0.f, 0.f);
+	v[1] = gVector4(0.f, yScale, 0.f, 0.f);
+	v[2] = gVector4(0.f, 0.f, zf_zn, -1.f);
+	v[3] = gVector4(0.f, 0.f, zn * zf_zn, 0.f);
+}
+
+void gMatrix4::setPerspetiveRH(float w, float h, float zn, float zf)
+{
+	float zf_zn = zf - zn;
+	
+	if ( (w==0) || (h==0) || (zf_zn == 0))
+		return;  // invalig diaposone
+
+	zf_zn = zf / zf_zn;
+
+	v[0] = gVector4(2*zn/w, 0.f, 0.f, 0.f);
+	v[1] = gVector4(0.f, 2*zn/h, 0.f, 0.f);
+	v[2] = gVector4(0.f, 0.f, zf_zn, -1.f);
+	v[3] = gVector4(0.f, 0.f, zn * zf_zn, 0.f);
 }
 
 void gMatrix4::operator = (const gMatrix4& other)
 {
-	memcpy_s( p, gMatrix4::Size, other.p, gMatrix4::Size );
+	memcpy_s(p, gMatrix4::Size, other.p, gMatrix4::Size);
 }
+
+_3RDE_API_ void gMatrix4::operator *= (const gMatrix4& other)
+{
+	s_temp = *this;
+	m_mul_noopt_dot( s_temp.p, other.p, this->p );
+}
+
+_3RDE_API_ gMatrix4 gMatrix4::operator * (const gMatrix4& other) const // matrix concatenation
+{
+	gMatrix4 m = *this;
+	m_mul_noopt_dot( this->p, other.p, m.p);
+	return m;
+}
+

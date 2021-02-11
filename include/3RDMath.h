@@ -32,6 +32,7 @@ struct gVector4
     _3RDE_API_ static const gVector4 Right;
     _3RDE_API_ static const gVector4 Up;
     _3RDE_API_ static const gVector4 Front;
+    _3RDE_API_ static const gVector4 Zero;
 
     _3RDE_API_ gVector4();
     _3RDE_API_ gVector4(const float* p); // 4 float
@@ -78,6 +79,7 @@ struct gVector3
     _3RDE_API_ static const gVector3 Right;
     _3RDE_API_ static const gVector3 Up;
     _3RDE_API_ static const gVector3 Front;
+    _3RDE_API_ static const gVector3 Zero;
     
     _3RDE_API_ gVector3();
     _3RDE_API_ gVector3(const float* p); // 3 float
@@ -128,6 +130,7 @@ struct gVector2
     _3RDE_API_ static const size_t Size;
     _3RDE_API_ static const gVector2 Up;
     _3RDE_API_ static const gVector2 Right;
+    _3RDE_API_ static const gVector2 Zero;
 
     _3RDE_API_ gVector2();
     _3RDE_API_ gVector2( const float* p ); // 2 float
@@ -238,40 +241,56 @@ struct gMatrix4
         };
 
         struct {
-            gVector4 v1, v2, v3, v4;
+            gVector4 v[4];
         };
 
-        float m[4][4];
+        //float m[4][4];
         float p[16];
     };
 
     _3RDE_API_ static const size_t Size;
     _3RDE_API_ static const gMatrix4 Identity;
+    _3RDE_API_ static const gVector4 V0_Id;
+    _3RDE_API_ static const gVector4 V1_Id;
+    _3RDE_API_ static const gVector4 V2_Id;
+    _3RDE_API_ static const gVector4 V3_Id;
+
 
     _3RDE_API_ gMatrix4();
     _3RDE_API_ gMatrix4(const float* m);  //16 floats
     _3RDE_API_ gMatrix4(bool isIdentity);
     _3RDE_API_ gMatrix4(const gMatrix4& other);
 
-    _3RDE_API_ void  identity();
+    _3RDE_API_ bool  inverse(); 
+    _3RDE_API_ void  setIdentity();
     _3RDE_API_ float determinant();
     _3RDE_API_ const gMatrix4& transpose();
 
-    _3RDE_API_ void translation( float x, float y, float z );
-    _3RDE_API_ void translation( const gVector4& v );  // use first 3 dim
-    _3RDE_API_ void translation( const gVector3& v );
-    _3RDE_API_ void translation( const float* v );  // 3 float
+    _3RDE_API_ void setTranslation( float x, float y, float z );
+    _3RDE_API_ void setTranslation( const gVector4& v );  // use first 3 dim
+    _3RDE_API_ void setTranslation( const gVector3& v );
+    _3RDE_API_ void setTranslation( const float* v );  // 3 float
 
-    _3RDE_API_ void rotationQuat( const gQuaternion& q );
-    _3RDE_API_ void rotationQuat(const float* v);  // 4 float
-    _3RDE_API_ void rotationPYR( float pitch, float yaw, float roll );
-    _3RDE_API_ void rotationPYR(const float* v);  // 3 float
+    _3RDE_API_ void setRotationX(float angle);
+    _3RDE_API_ void setRotationY(float angle);
+    _3RDE_API_ void setRotationZ(float angle);
 
-    _3RDE_API_ void scale( float sx, float sy, float sz );
-    _3RDE_API_ void scale( const gVector3& v );
-    _3RDE_API_ void scale( const float* v );  // 3 float
+    _3RDE_API_ void setRotationByQuat( const gQuaternion& q );
+    _3RDE_API_ void setRotationByQuat(const float* v);  // 4 float
+    _3RDE_API_ void setRotationXYZ( float rx, float ry, float rz );
+    _3RDE_API_ void setRotationXYZ(const float* v);  // 3 float
 
-    _3RDE_API_ void operator = (const gMatrix4& other);
+    _3RDE_API_ void setScale( float sx, float sy, float sz );
+    _3RDE_API_ void setScale( const gVector3& v );
+    _3RDE_API_ void setScale( const float* v );  // 3 float
+
+    _3RDE_API_ void setPerspetiveRHFOV(float fowY, float aspectRatio, float zn, float zf);
+    _3RDE_API_ void setPerspetiveRH(float w, float h, float zn, float zf);
+
+    _3RDE_API_ inline void operator = (const gMatrix4& other);
+
+    _3RDE_API_ inline void operator *= ( const gMatrix4& other );
+    _3RDE_API_ inline gMatrix4 operator * ( const gMatrix4& other ) const; // matrix concatenation
     
 };
 
