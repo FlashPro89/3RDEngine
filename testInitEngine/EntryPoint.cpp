@@ -449,14 +449,40 @@ int WINAPI WinMain
 
 	SP3RDENGINE engine = Create3RDEngine();
 
-	
+	auto use = engine.use_count(); // test
+	auto unique = engine.unique(); // test
+
+	{
+		SP3RDENGINE engine2 = Get3RDEngine();
+		use = engine.use_count(); // test
+		unique = engine.unique(); // test
+
+		engine2.reset();
+
+		engine2 = Get3RDEngine();
+		use = engine.use_count(); // test
+		unique = engine.unique(); // test
+
+		auto engine3 = Get3RDEngine();
+
+		auto engine4 = Get3RDEngine();
+
+		use = engine.use_count(); // test
+		unique = engine.unique(); // test
+
+		int a = 10;
+	}
+
+	use = engine.use_count(); // test
+	unique = engine.unique(); // test
+
+	assert( !engine.unique() && "is unique");
 
 	mathlib_test();
 	testASM();
 
 	if (engine->initialize(eRENDERAPI::RA_DX12))
 		engine->run();
-	
 
 	return 0;
 }

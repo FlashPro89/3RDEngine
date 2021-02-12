@@ -35,19 +35,16 @@ BOOL WINAPI DllMain(
 
 using namespace std;
 
+_3RDE_API_ WP3RDENGINE gwpEngine;
+
 _3RDE_API_ SP3RDENGINE Create3RDEngine() // run once per application
 {	
     SP3RDENGINE spEngine = shared_ptr<g3RDEngine>(new g3RDEngine());
-
-	auto use = spEngine.use_count(); // test
-	auto unique = spEngine.unique(); // test
-
+    gwpEngine = spEngine;
 	return spEngine;
 }
 
 _3RDE_API_ SP3RDENGINE Get3RDEngine()
 {
-    SP3RDENGINE p;
-    return p;
-    //return gspEngine;
+    return gwpEngine.lock();
 }

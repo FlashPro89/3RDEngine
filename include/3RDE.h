@@ -42,6 +42,8 @@ protected:
 };
 
 typedef std::shared_ptr<I3RDEngine> SP3RDENGINE;
+typedef std::weak_ptr<I3RDEngine> WP3RDENGINE;
+
 _3RDE_API_ SP3RDENGINE Create3RDEngine();
 _3RDE_API_ SP3RDENGINE Get3RDEngine();
 
