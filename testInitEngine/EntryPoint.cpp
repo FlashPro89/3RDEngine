@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include "../include/3RDEngine.h"
+#include "../include/3RDE.h"
 #include "../include/3RDMath.h"
 #include <math.h>
 
@@ -446,12 +446,17 @@ int WINAPI WinMain
 	int nCmdShow		// тип отображения окна программы
 )
 {
+
 	SP3RDENGINE engine = Create3RDEngine();
+
+	
 
 	mathlib_test();
 	testASM();
 
-	engine->initialize(eRENDERAPI::RA_DX12);
-	engine->finalize();
+	if (engine->initialize(eRENDERAPI::RA_DX12))
+		engine->run();
+	
+
 	return 0;
 }

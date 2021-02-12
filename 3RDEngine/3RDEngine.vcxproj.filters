@@ -2,24 +2,27 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="3RDEngine.cpp">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="3RDEngineImpl.cpp">
-      <Filter>Исходные файлы</Filter>
+    <ClCompile Include="3RDE.cpp">
+      <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="3RDMath.cpp">
-      <Filter>Исходные файлы</Filter>
+      <Filter>Engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="3RDEngineImpl.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\3RDEngine.h">
-      <Filter>Export</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\3RDMath.h">
       <Filter>Export</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\3RDError.h">
+      <Filter>Export</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\3RDE.h">
+      <Filter>Export</Filter>
+    </ClInclude>
+    <ClInclude Include="3RDEngine.h">
+      <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -31,6 +34,9 @@
     </Filter>
     <Filter Include="Export">
       <UniqueIdentifier>{481dd68f-a2e3-4d0b-9f3e-ba4169f6f24e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{ea2424af-316b-4526-9076-f7952cd6f34f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef _3RENGINE_H_
-#define _3RDENGINE_H_
+#ifndef _3RDE_H_
+#define _3RDE_H_
 
 #include <memory>
 
@@ -32,12 +32,18 @@ public:
 	I3RDEngine() {}
 	virtual ~I3RDEngine() {};
 
+	virtual void run() = 0;
 	virtual bool initialize( eRENDERAPI api ) = 0;
+
+	virtual eRENDERAPI getLatestSupportedGAPI() = 0;
+
+protected:
 	virtual bool finalize() = 0;
 };
 
 typedef std::shared_ptr<I3RDEngine> SP3RDENGINE;
 _3RDE_API_ SP3RDENGINE Create3RDEngine();
+_3RDE_API_ SP3RDENGINE Get3RDEngine();
 
 
 #endif

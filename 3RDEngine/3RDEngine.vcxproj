@@ -149,14 +149,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="3RDE.cpp" />
     <ClCompile Include="3RDEngine.cpp" />
-    <ClCompile Include="3RDEngineImpl.cpp" />
     <ClCompile Include="3RDMath.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\3RDEngine.h" />
+    <ClInclude Include="..\include\3RDE.h" />
+    <ClInclude Include="..\include\3RDError.h" />
     <ClInclude Include="..\include\3RDMath.h" />
-    <ClInclude Include="3RDEngineImpl.h" />
+    <ClInclude Include="3RDEngine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
