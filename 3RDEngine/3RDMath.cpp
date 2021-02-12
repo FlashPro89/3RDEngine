@@ -331,7 +331,7 @@ inline void m_invert_sse(const float* src, float* dst)
 
 /*
 * 
-void m_mul_sse_dot(const float* a, const float* b, float* r)
+void mm_mul_sse_dot(const float* a, const float* b, float* r)
 {
 	__m128 a_line, b_line, r_line;
 	float mc[16] __attribute__((aligned(16)));  // 16-byte aligned temp array
@@ -353,11 +353,10 @@ void m_mul_sse_dot(const float* a, const float* b, float* r)
 */
 
 
-__inline void m_mul_noopt_dot(const float* a, const float* b, float* r)
+__inline void mm_mul_noopt_dot(const float* a, const float* b, float* r)
 {
+	/*
 	unsigned int rindex = 0;
-
-
 	for (int i = 0; i < 4; i++) //row
 	{
 		for (int j = 0; j < 4; j++) //column
@@ -372,6 +371,47 @@ __inline void m_mul_noopt_dot(const float* a, const float* b, float* r)
 			
 		}
 	}
+	*/
+
+	r[0] = a[0] * b[0] + a[1] * b[4] + a[2] * b[8]  + a[3] * b[12];
+	r[1] = a[0] * b[1] + a[1] * b[5] + a[2] * b[9]  + a[3] * b[13];
+	r[2] = a[0] * b[2] + a[1] * b[6] + a[2] * b[10] + a[3] * b[14];
+	r[3] = a[0] * b[3] + a[1] * b[7] + a[2] * b[11] + a[3] * b[15];
+
+	r[4] = a[4] * b[0] + a[5] * b[4] + a[6] * b[8]  + a[7] * b[12];
+	r[5] = a[4] * b[1] + a[5] * b[5] + a[6] * b[9]  + a[7] * b[13];
+	r[6] = a[4] * b[2] + a[5] * b[6] + a[6] * b[10] + a[7] * b[14];
+	r[7] = a[4] * b[3] + a[5] * b[7] + a[6] * b[11] + a[7] * b[15];
+
+	r[8] =  a[8] * b[0] + a[9] * b[4] + a[10] * b[8]  + a[11] * b[12];
+	r[9] =  a[8] * b[1] + a[9] * b[5] + a[10] * b[9]  + a[11] * b[13];
+	r[10] = a[8] * b[2] + a[9] * b[6] + a[10] * b[10] + a[11] * b[14];
+	r[11] = a[8] * b[3] + a[9] * b[7] + a[10] * b[11] + a[11] * b[15];
+
+	r[12] = a[12] * b[0] + a[13] * b[4] + a[14] * b[8]  + a[15] * b[12];
+	r[13] = a[12] * b[1] + a[13] * b[5] + a[14] * b[9]  + a[15] * b[13];
+	r[14] = a[12] * b[2] + a[13] * b[6] + a[14] * b[10] + a[15] * b[14];
+	r[15] = a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15];
+}
+
+__inline void mv_mul_noopt_dot(const float* a, const float* b, float* r)
+{
+	/*
+	unsigned int rindex = 0;
+	for (int i = 0; i < 4; i++) //row
+	{
+		r[i] = 0;
+		for (int j = 0; j < 4; j++) //col
+		{
+			r[i] += a[j * 4 + i] * b[j]; // use matrix transpose i % j
+		}
+	}
+	*/
+
+	r[0] = a[0] * b[0] + a[4] * b[1] + a[8] * b[2] + a[12] * b[3];
+	r[1] = a[1] * b[0] + a[5] * b[1] + a[9] * b[2] + a[13] * b[3];
+	r[2] = a[2] * b[0] + a[6] * b[1] + a[10] * b[2] + a[14] * b[3];
+	r[3] = a[3] * b[0] + a[7] * b[1] + a[11] * b[2] + a[15] * b[3];
 }
 
 
@@ -413,9 +453,9 @@ gVector4::gVector4( const gVector4& other )
 	x = other.x; y = other.y;  z = other.z; w = other.w; 
 }
 
-void gVector4::operator = (const gVector4& other)
+gVector4::gVector4(const gVector3& other, float _w )
 {
-	memcpy_s( _v, gVector4::Size, other._v, gVector4::Size );
+	x = other.x; y = other.y; z = other.z; w = _w;
 }
 
 void gVector4::normalize()
@@ -470,39 +510,44 @@ gVector4 gVector4::operator - (const gVector4& other)  const
 	return t;
 }
 
-void gVector4::operator += (const gVector4& other)
+gVector4& gVector4::operator += (const gVector4& other)
 {
 	x += other.x;
 	y += other.y;
 	z += other.z;
 	w += other.w;
+	return *this;
 }
 
-void gVector4::operator -= (const gVector4& other)
+gVector4& gVector4::operator -= (const gVector4& other)
 {
 	x -= other.x;
 	y -= other.y;
 	z -= other.z;
 	w -= other.w;
+	return *this;
 }
 
-void gVector4::operator *= (float value)
+gVector4& gVector4::operator *= (float value)
 {
 	x *= value;
 	y *= value;
 	z *= value;
 	w *= value;
+	return *this;
+
 }
 
-void gVector4::operator /= (float value)
+gVector4& gVector4::operator /= (float value)
 {
-	if (value == 0)
-		return;
-
-	x /= value;
-	y /= value;
-	z /= value;
-	w /= value;
+	if (value != 0)
+	{
+		x /= value;
+		y /= value;
+		z /= value;
+		w /= value;
+	}
+	return *this;
 }
 
 float gVector4::operator * (const gVector4& other)  const // dot product of two vecs
@@ -586,11 +631,6 @@ void gVector3::set(float _x, float _y, float _z)
 	this->z = _z;
 }
 
-void gVector3::operator = (const gVector3& other)
-{
-	x = other.x; y = other.y; z = other.z;
-}
-
 gVector3 gVector3::operator + () const
 {
 	return gVector3(x, y, z);
@@ -613,43 +653,48 @@ gVector3 gVector3::operator - (const gVector3& other) const
 	return t;
 }
 
-void gVector3::operator += (const gVector3& other)
+gVector3& gVector3::operator += (const gVector3& other)
 {
 	x += other.x;
 	y += other.y;
 	z += other.z;
+	return *this;
 }
 
-void gVector3::operator -= (const gVector3& other)
+gVector3& gVector3::operator -= (const gVector3& other)
 {
 	x -= other.x;
 	y -= other.y;
 	z -= other.z;
+	return *this;
 }
 
-void gVector3::operator *= (float value)
+gVector3& gVector3::operator *= (float value)
 {
 	x *= value;
 	y *= value;
 	z *= value;
+	return *this;
 }
 
-void gVector3::operator /= (float value)
+gVector3& gVector3::operator /= (float value)
 {
-	if (value == 0)
-		return;
-
-	x /= value;
-	y /= value;
-	z /= value;
+	if (value != 0)
+	{
+		x /= value;
+		y /= value;
+		z /= value;
+	}
+	return *this;
 }
 
-void gVector3::operator ^= (const gVector3& other) // cross product with other vec
+gVector3& gVector3::operator ^= (const gVector3& other) // cross product with other vec
 {
 	gVector3 tmp(*this);
 	x = tmp.y * other.z - tmp.z * other.y;
 	y = tmp.z * other.x - tmp.x * other.z;
 	z = tmp.x * other.y - tmp.y * other.x;
+	return *this;
 }
 
 float gVector3::operator * (const gVector3& other) const // dot product of two vecs
@@ -711,7 +756,8 @@ gVector2::gVector2(const gVector2& other)
 void gVector2::normalize()
 {
 	float l = lenght();
-	(*this) /= l;
+	if( l != 0 )
+		(*this) /= l;
 }
 
 float gVector2::lenght() const
@@ -735,11 +781,6 @@ void gVector2::set(float _x, float _y)
 	this->y = _y;
 }
 
-void gVector2::operator = (const gVector2& other)
-{
-	x = other.x; y = other.y;
-}
-
 gVector2 gVector2::operator + () const
 {
 	return gVector2(x, y);
@@ -760,31 +801,35 @@ gVector2 gVector2::operator - (const gVector2& other) const
 	return gVector2 (x - other.x, y - other.y);
 }
 
-void gVector2::operator += (const gVector2& other)
+gVector2& gVector2::operator += (const gVector2& other)
 {
 	x += other.x;
 	y += other.y;
+	return *this;
 }
 
-void gVector2::operator -= (const gVector2& other)
+gVector2& gVector2::operator -= (const gVector2& other)
 {
 	x -= other.x;
 	y -= other.y;
+	return *this;
 }
 
-void gVector2::operator *= (float value)
+gVector2& gVector2::operator *= (float value)
 {
 	x *= value;
 	y *= value;
+	return *this;
 }
 
-void gVector2::operator /= (float value)
+gVector2& gVector2::operator /= (float value)
 {
-	if (value == 0)
-		return;
-
-	x /= value;
-	y /= value;
+	if (value != 0)
+	{
+		x /= value;
+		y /= value;
+	}
+	return *this;
 }
 
 float gVector2::operator * (const gVector2& other) const // dot product of two vecs
@@ -852,14 +897,6 @@ void gPlane::fromPoints(const gVector3& p0, const gVector3& p1, const gVector3& 
 
 void gPlane::normalize()
 {
-	/*
-	Plane Result;
-	float Distance = sqrtf(a * a + b * b + c * c);
-	Result.a = a / Distance;
-	Result.b = b / Distance;
-	Result.c = c / Distance;
-	Result.d = d / Distance;
-	return Result; */
 	float l = n.lenght();
 	if (l == 0) return;
 	a /= l; b /= l; c /= l; d /= l;
@@ -889,6 +926,14 @@ gQuaternion::gQuaternion()
 	//identity();
 }
 
+gQuaternion::gQuaternion(const gQuaternion& other)
+{
+	x = other.x;
+	y = other.y;
+	z = other.z;
+	w = other.w;
+}
+
 gQuaternion::gQuaternion(const float* v) // 4 floats
 {
 	x = v[0]; y = v[1]; z = v[2]; w = v[3];
@@ -906,12 +951,46 @@ gQuaternion::gQuaternion(gVector3 axis, float angle)
 
 gQuaternion::gQuaternion(float pitch, float yaw, float roll)
 {
-	fromPitchYawRoll(pitch, yaw, roll);
+	fromXYZAngles(pitch, yaw, roll);
 }
 
 void gQuaternion::identity()  // make identity quat
 {
-	memcpy_s( v, gQuaternion::Size, gQuaternion::Identity.v, gQuaternion::Size );
+	v = gQuaternion::Identity.v;
+	w = gQuaternion::Identity.w;
+}
+
+float gQuaternion::norm()  // dot product of quat components
+{
+	return x * x + y * y + z * z + w * w;
+}
+
+float gQuaternion::magnitude()
+{
+	return sqrtf( x * x + y * y + z * z + w * w ); // "lenght" of quat
+}
+
+gQuaternion& gQuaternion::inverse() // build inverse quat
+{
+	float _norm = norm();
+	if (_norm == 0) //err
+	{
+		*this = gQuaternion::Identity;
+	}
+	else
+	{
+		x = -x; y = -y; z = -z; // conjugate quat
+		*this = *this / _norm;
+	}
+	return *this;
+}
+
+gVector3& gQuaternion::rotateVec(gVector3& v)
+{
+	gQuaternion vq(v.x, v.y, v.z, 0.f);
+	gQuaternion qinv = *this; qinv.inverse();
+	
+	return v = (*this * vq * qinv).v;
 }
 
 void gQuaternion::fromEquationConstants(float _x, float _y, float _z, float _w) //build quat from constants
@@ -935,7 +1014,7 @@ void gQuaternion::fromAxisAngle(gVector3 axis, float angle)  // build quat from 
 
 /**** EulerAngles.c - Convert Euler angles to/from matrix or quat ****/
 /* Ken Shoemake, 1993 */
-void gQuaternion::fromPitchYawRoll( float pitch, float yaw, float roll ) // build quat pitch, yaw, roll angles in radians
+void gQuaternion::fromXYZAngles( float pitch, float yaw, float roll ) // build quat pitch, yaw, roll angles in radians
 {
 	float a[3], ti, tj, th, ci, cj, ch, si, sj, sh, cc, cs, sc, ss;
 
@@ -958,7 +1037,7 @@ void gQuaternion::fromPitchYawRoll( float pitch, float yaw, float roll ) // buil
 
 /**** EulerAngles.c - Convert Euler angles to/from matrix or quat ****/
 /* Ken Shoemake, 1993 */
-gVector3 gQuaternion::getPitchYawRoll() const // get pitch, yaw, roll angles equivalent to quat
+gVector3 gQuaternion::getXYZAngles() const // get pitch, yaw, roll angles equivalent to quat
 {
 	gVector3 angles;
 
@@ -987,6 +1066,76 @@ gVector3 gQuaternion::getPitchYawRoll() const // get pitch, yaw, roll angles equ
 	}
 
 	return angles;
+}
+
+gQuaternion gQuaternion::operator * (float value) const
+{
+	gQuaternion r;
+	r.x = x * value;
+	r.y = y * value;
+	r.z = z * value;
+	r.w = w * value;
+	return r;
+}
+
+gQuaternion gQuaternion::operator / (float value) const
+{
+	gQuaternion r;
+	r.x = x / value;
+	r.y = y / value;
+	r.z = z / value;
+	r.w = w / value;
+	return r;
+}
+
+gQuaternion gQuaternion::operator * (const gQuaternion& other) const
+{
+	gQuaternion r;
+	r.x = w * other.x + x * other.w + y * other.z - z * other.y;
+	r.y = w * other.y - x * other.z + y * other.w + z * other.x;
+	r.z = w * other.z + x * other.y - y * other.x + z * other.w;
+	r.w = w * other.w - x * other.x - y * other.y - z * other.z;
+	return r;
+}
+
+gQuaternion gQuaternion::operator + (const gQuaternion& other) const
+{
+	gQuaternion r;
+	r.x = x + other.x;
+	r.y = y + other.y;
+	r.z = z + other.z;
+	r.w = w + other.w;
+	return r;
+}
+
+gQuaternion& gQuaternion::operator *= (float value)
+{
+	x *= value; y *= value; z *= value; w *= value;
+	return *this;
+}
+
+gQuaternion& gQuaternion::operator /= (float value)
+{
+	if (value != 0)
+	{
+		x /= value; y /= value; z /= value; w /= value;
+	}
+	return *this;
+}
+
+gQuaternion& gQuaternion::operator *= (const gQuaternion& other)
+{
+	gQuaternion t = *this;
+	return *this = t * other;
+}
+
+gQuaternion& gQuaternion::operator += (const gQuaternion& other)
+{
+	x += other.x;
+	y += other.y;
+	z += other.z;
+	w += other.w;
+	return *this;
 }
 
 // ------------------------------------
@@ -1074,6 +1223,22 @@ const gMatrix4& gMatrix4::transpose()
 	_43 = t._34;
 
 	return *this;
+}
+
+gVector3& gMatrix4::transformVec(gVector3& v)
+{
+	gVector4 r(v);
+	mv_mul_noopt_dot(p, gVector4(v).p, r.p);
+	v = r.v;
+	return v;
+}
+
+gVector4& gMatrix4::transformVec(gVector4& v)
+{
+	gVector4 r(v);
+	mv_mul_noopt_dot(p, v.p, r.p);
+	v = r;
+	return v;
 }
 
 void gMatrix4::setTranslation( float x, float y, float z )
@@ -1250,21 +1415,55 @@ void gMatrix4::setPerspetiveRH(float w, float h, float zn, float zf)
 	v[3] = gVector4(0.f, 0.f, zn * zf_zn, 0.f);
 }
 
+void gMatrix4::setOrthoRH( float w, float h, float zn, float zf )
+{
+	float zn_zf = zn - zf;
+
+	if ((w == 0) || (h == 0) || (zn_zf == 0))
+		return;  // invalig diaposone
+
+	zn_zf = 1.f / zn_zf;
+
+	v[0] = gVector4(2 / w, 0.f, 0.f, 0.f);
+	v[1] = gVector4(0.f, 2 / h, 0.f, 0.f);
+	v[2] = gVector4(0.f, 0.f, zn_zf, 0.f);
+	v[3] = gVector4(0.f, 0.f, zn*zn_zf, 1.f);
+}
+
+void gMatrix4::setLookAtRH( const gVector3& eye, const gVector3& at, const gVector3& up )
+{
+	gVector3 zAxis = eye - at; zAxis.normalize();
+	gVector3 xAxis = up ^ zAxis; xAxis.normalize();
+	gVector3 yAxis = zAxis ^ xAxis;
+
+	float dotX = (xAxis * eye);
+	float dotY = (yAxis * eye);
+	float dotZ = (zAxis * eye);
+
+	v[0] = gVector4(xAxis.x, yAxis.x, zAxis.x, 0.f);
+	v[1] = gVector4(xAxis.y, yAxis.y, zAxis.y, 0.f);
+	v[2] = gVector4(xAxis.z, yAxis.z, zAxis.z, 0.f);
+	v[3] = gVector4( dotX, dotY, dotZ, 1.f);
+}
+
 void gMatrix4::operator = (const gMatrix4& other)
 {
 	memcpy_s(p, gMatrix4::Size, other.p, gMatrix4::Size);
 }
 
-_3RDE_API_ void gMatrix4::operator *= (const gMatrix4& other)
+void gMatrix4::operator *= (const gMatrix4& other)
 {
 	s_temp = *this;
-	m_mul_noopt_dot( s_temp.p, other.p, this->p );
+	mm_mul_noopt_dot( s_temp.p, other.p, this->p );
 }
 
-_3RDE_API_ gMatrix4 gMatrix4::operator * (const gMatrix4& other) const // matrix concatenation
+gMatrix4 gMatrix4::operator * (const gMatrix4& other) const // matrix concatenation
 {
 	gMatrix4 m = *this;
-	m_mul_noopt_dot( this->p, other.p, m.p);
+	mm_mul_noopt_dot( this->p, other.p, m.p);
 	return m;
 }
+
+
+
 
