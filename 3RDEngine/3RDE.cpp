@@ -39,7 +39,9 @@ _3RDE_API_ WP3RDENGINE gwpEngine;
 
 _3RDE_API_ SP3RDENGINE Create3RDEngine() // run once per application
 {	
-    SP3RDENGINE spEngine = shared_ptr<g3RDEngine>(new g3RDEngine());
+    //SP3RDENGINE spEngine = shared_ptr<g3RDEngine>(new g3RDEngine());
+    SP3RDENGINE spEngine = std::make_shared<g3RDEngine>();
+
     gwpEngine = spEngine;
 	return spEngine;
 }
