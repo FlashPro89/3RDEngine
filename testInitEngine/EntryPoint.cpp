@@ -7,10 +7,19 @@
 #include <d3dx9.h>
 #pragma comment( lib, "d3dx9.lib" )
 
+
 #ifdef _DEBUG
-#pragma comment ( lib, "../lib/3RDEngine_d.lib" )
+#ifdef _WIN64
+#pragma comment ( lib, "../lib/x64/3RDEngine_d.lib" )
 #else
-#pragma comment ( lib, "../lib/3RDEngine.lib" )
+#pragma comment ( lib, "../lib/x86/3RDEngine_d.lib" )
+#endif
+#else
+#ifdef _WIN64
+#pragma comment ( lib, "../lib/x64/3RDEngine.lib" )
+#else
+#pragma comment ( lib, "../lib/x86/3RDEngine.lib" )
+#endif
 #endif
 
 #include<assert.h>
@@ -447,25 +456,26 @@ int WINAPI WinMain
 )
 {
 
-	SP3RDENGINE engine = Create3RDEngine();
+	//SP3RDENGINE engine = Create3RDEngine();
+	SP3RDENGINE engine = I3RDEngine::get();
 
 	auto use = engine.use_count(); // test
 	auto unique = engine.unique(); // test
 
 	{
-		SP3RDENGINE engine2 = Get3RDEngine();
+		SP3RDENGINE engine2 = I3RDEngine::get();
 		use = engine.use_count(); // test
 		unique = engine.unique(); // test
 
 		engine2.reset();
 
-		engine2 = Get3RDEngine();
+		engine2 = I3RDEngine::get();
 		use = engine.use_count(); // test
 		unique = engine.unique(); // test
 
-		auto engine3 = Get3RDEngine();
+		auto engine3 = I3RDEngine::get();
 
-		auto engine4 = Get3RDEngine();
+		auto engine4 = I3RDEngine::get();
 
 		use = engine.use_count(); // test
 		unique = engine.unique(); // test
@@ -475,14 +485,25 @@ int WINAPI WinMain
 
 	use = engine.use_count(); // test
 	unique = engine.unique(); // test
+	I3RDEngine::get();
+	use = engine.use_count(); // test
+	unique = engine.unique(); // test
 
-	assert( !engine.unique() && "is unique");
+	I3RDEngine::get();
+	use = engine.use_count(); // test
+	unique = engine.unique(); // test
+
+	use = engine.use_count(); // test
+	unique = engine.unique(); // test
+	auto r = I3RDEngine::get();
+	use = engine.use_count(); // test
+	unique = engine.unique(); // test
 
 	mathlib_test();
 	testASM();
 
-	if (engine->initialize(eRENDERAPI::RA_DX12))
-		engine->run();
+	assert( engine->initialize(eRENDERAPI::RA_DX12) && "Engine initialization failed!" );
+	assert( engine->run() && "Engine run failed!" );
 
 	return 0;
 }

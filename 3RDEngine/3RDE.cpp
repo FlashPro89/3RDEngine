@@ -1,7 +1,23 @@
 #include "../include/3RDE.h"
-#include "3RDEngine.h"
+#include "Engine.h"
 
+//#include "../lua/lua.hpp"
+
+#ifdef _DEBUG
+#ifdef _WIN64
+#pragma comment ( lib, "../lib/x64/lua_d.lib" )
+#else
+#pragma comment ( lib, "../lib/x86/lua_d.lib" )
+#endif
+#else
 #ifdef _WIN32
+#pragma comment ( lib, "../lib/x64/lua.lib" )
+#else
+#pragma comment ( lib, "../lib/x86/lua.lib" )
+#endif
+#endif
+
+/*
 #include <Windows.h>
 
 BOOL WINAPI DllMain(
@@ -31,22 +47,24 @@ BOOL WINAPI DllMain(
     }
     return TRUE;  // Successful DLL_PROCESS_ATTACH.
 }
-#endif
+*/
 
 using namespace std;
 
 _3RDE_API_ WP3RDENGINE gwpEngine;
 
-_3RDE_API_ SP3RDENGINE Create3RDEngine() // run once per application
-{	
-    //SP3RDENGINE spEngine = shared_ptr<g3RDEngine>(new g3RDEngine());
-    SP3RDENGINE spEngine = std::make_shared<g3RDEngine>();
-
-    gwpEngine = spEngine;
-	return spEngine;
+SP3RDENGINE I3RDEngine::get()
+{
+    return Get3RDEngine();
 }
 
-_3RDE_API_ SP3RDENGINE Get3RDEngine()
+SP3RDENGINE Get3RDEngine()
 {
+    SP3RDENGINE spEngine;
+    if (gwpEngine.expired())
+    {
+        spEngine = std::make_shared<g3RDEngine>();
+        gwpEngine = spEngine;
+    }
     return gwpEngine.lock();
 }
