@@ -159,6 +159,7 @@
   <ItemGroup>
     <ClCompile Include="3RDE.cpp" />
     <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="File.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="PlatformWin.cpp" />
     <ClCompile Include="Scripts.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="..\include\3RDE.h" />
     <ClInclude Include="..\include\3RDMath.h" />
     <ClInclude Include="Engine.h" />
+    <ClInclude Include="File.h" />
     <ClInclude Include="Interfaces.h" />
     <ClInclude Include="PlatformWin.h" />
     <ClInclude Include="Scripts.h" />

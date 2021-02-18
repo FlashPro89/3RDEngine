@@ -4,16 +4,21 @@
     <ClCompile Include="3RDE.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Scripts.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="Engine.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="Math.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="PlatformWin.cpp" />
+    <ClCompile Include="PlatformWin.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripts.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="File.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\3RDMath.h">
@@ -22,24 +27,23 @@
     <ClInclude Include="..\include\3RDE.h">
       <Filter>Export</Filter>
     </ClInclude>
-    <ClInclude Include="Scripts.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="Engine.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="Interfaces.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="PlatformWin.h" />
+    <ClInclude Include="PlatformWin.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="File.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Исходные файлы">
-      <UniqueIdentifier>{2552ffad-0447-4329-9268-1976e65e8ff0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Файлы заголовков">
-      <UniqueIdentifier>{113e0f14-8384-4f1a-b4e6-63fff77a0138}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Export">
       <UniqueIdentifier>{481dd68f-a2e3-4d0b-9f3e-ba4169f6f24e}</UniqueIdentifier>
     </Filter>

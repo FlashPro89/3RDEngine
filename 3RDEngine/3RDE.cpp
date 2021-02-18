@@ -10,7 +10,7 @@
 #pragma comment ( lib, "../lib/x86/lua_d.lib" )
 #endif
 #else
-#ifdef _WIN32
+#ifdef _WIN64
 #pragma comment ( lib, "../lib/x64/lua.lib" )
 #else
 #pragma comment ( lib, "../lib/x86/lua.lib" )
@@ -51,20 +51,21 @@ BOOL WINAPI DllMain(
 
 using namespace std;
 
-_3RDE_API_ WP3RDENGINE gwpEngine;
-
 SP3RDENGINE I3RDEngine::get()
-{
-    return Get3RDEngine();
-}
+{  
+    static WP3RDENGINE s_wpEngine;
 
-SP3RDENGINE Get3RDEngine()
-{
     SP3RDENGINE spEngine;
-    if (gwpEngine.expired())
+    if (s_wpEngine.expired())
     {
         spEngine = std::make_shared<g3RDEngine>();
-        gwpEngine = spEngine;
+        s_wpEngine = spEngine;
     }
-    return gwpEngine.lock();
+    return 	s_wpEngine.lock();
+    
+}
+
+_3RDE_API_ SP3RDENGINE Get3RDEngine()
+{
+    return I3RDEngine::get();
 }

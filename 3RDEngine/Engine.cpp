@@ -1,5 +1,7 @@
 #include <windows.h>
+#include <assert.h>
 #include "Engine.h"
+#include "PlatformWin.h"
 
 using namespace std;
 // ------------------------------------
@@ -7,36 +9,22 @@ using namespace std;
 //		*** class gEngineErrorHandler ***
 //
 // ------------------------------------
-gEngineErrorHandler::gEngineErrorHandler(const char* location, 
-	const char* file, int line, const char* message)
+gEngineExceptionHandler::gEngineExceptionHandler(const gString& location,
+	const gString& file, int line, const gString& message)
 {
-	m_location = location;
-	m_message = message;
-	m_file = file;
-	m_line = std::to_string(line);
+	m_exceptionDescription = "Exception in \"" + location + "\"\n" + "File: " + file + "\nLine: " + std::to_string(line);
+	if (message != "")
+		m_exceptionDescription += "\nMessage: " + message;
 }
 
-gEngineErrorHandler::~gEngineErrorHandler()
+gEngineExceptionHandler::~gEngineExceptionHandler()
 {
 
 }
 
-const char* gEngineErrorHandler::getErrorLocation() const
+const char* gEngineExceptionHandler::getExceptionDescription() const
 {
-	return m_location.c_str();
-}
-
-const char* gEngineErrorHandler::getErrorMessage() const
-{
-	return m_message.c_str();
-}
-const char* gEngineErrorHandler::getFileName() const
-{
-	return m_file.c_str();
-}
-const char* gEngineErrorHandler::getFileLine() const
-{
-	return  m_line.c_str();
+	return m_exceptionDescription.c_str();
 }
 
 // ------------------------------------
@@ -66,7 +54,12 @@ bool g3RDEngine::initialize(eRENDERAPI api)
 {
 	try
 	{
-		throw(gEngineErrorHandler(__FUNCSIG__, __FILE__, __LINE__));
+#ifdef _WIN32
+		m_spPlatform = std::make_shared<gPlatformWin>();
+#else
+		static_assert( false, "Only Windows platform supported now!");
+#endif
+
 		switch (api)
 		{
 		case eRENDERAPI::RA_DX9:
@@ -75,9 +68,10 @@ bool g3RDEngine::initialize(eRENDERAPI api)
 			return true;
 		}
 	}
-	catch (const IErrorHandler& e)
+	catch (const gEngineExceptionHandler& e)
 	{
-		e.getErrorLocation();
+		// need platform independent function!
+		MessageBox( 0, e.getExceptionDescription(), "3RDE Game Engine", MB_ICONERROR );
 		finalize();
 	}
 	return false;

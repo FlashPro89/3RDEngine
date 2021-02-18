@@ -43,7 +43,6 @@ protected:
 	virtual bool finalize() = 0;
 };
 
-SP3RDENGINE Get3RDEngine();
-
+_3RDE_API_ SP3RDENGINE Get3RDEngine();
 
 #endif

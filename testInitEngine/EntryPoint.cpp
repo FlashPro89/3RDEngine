@@ -502,8 +502,8 @@ int WINAPI WinMain
 	mathlib_test();
 	testASM();
 
-	assert( engine->initialize(eRENDERAPI::RA_DX12) && "Engine initialization failed!" );
-	assert( engine->run() && "Engine run failed!" );
+	if(  engine->initialize(eRENDERAPI::RA_DX12) )
+		engine->run();
 
 	return 0;
 }

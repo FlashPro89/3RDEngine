@@ -1,6 +1,6 @@
 #include "../include/3RDMath.h"
 #include <math.h>
-#include <string>
+#include <STRing>
 #include <xmmintrin.h>
 
 
@@ -206,7 +206,7 @@ inline void m_invert_noopt(const float* src, float* dst)
 }
 
 // The original code as provided by Intel in
-// "Streaming SIMD Extensions - Inverse of 4x4 Matrix"
+// "STReaming SIMD Extensions - Inverse of 4x4 Matrix"
 // (ftp://download.intel.com/design/pentiumiii/sml/24504301.pdf)
 
 inline void m_invert_sse(const float* src, float* dst)
