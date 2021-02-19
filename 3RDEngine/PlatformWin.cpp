@@ -6,11 +6,11 @@
 #include <windows.h>
 
 
-#define WINDOW_STYLE (WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX | WS_CAPTION)
+#define WINDOW_STYLE ( WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX | WS_CAPTION )
 
-gPlatformWin::gWindow::gWindow( const gWINDOWPARAMS& parameters )
+gPlatformWin::gWindow::gWindow()
 {
-	m_parameters = parameters;
+	m_parameters;
 	m_wHandle = 0;
 }
 
@@ -29,7 +29,8 @@ void* gPlatformWin::gWindow::getWindowHanlde()
 
 void gPlatformWin::gWindow::showWindow(bool show)
 {
-	ShowWindow( (HWND)m_wHandle, show ? SW_HIDE : SW_SHOW );
+	ShowWindow( (HWND)m_wHandle, show ?  SW_SHOW : SW_HIDE);
+	updateWindow();
 }
 
 void gPlatformWin::gWindow::setWindowParameters( const gWINDOWPARAMS& parameters )
@@ -52,7 +53,7 @@ void gPlatformWin::gWindow::setWindowParameters( const gWINDOWPARAMS& parameters
 	SetWindowText(hWnd, m_parameters.name.c_str());
 }
 
-const IPlatform::gWINDOWPARAMS& gPlatformWin::gWindow::getWindowParameters() const
+const gPlatformWin::IWindow::gWINDOWPARAMS& gPlatformWin::gWindow::getWindowParameters() const
 {
 	return this->m_parameters;
 }
@@ -61,6 +62,15 @@ bool gPlatformWin::gWindow::updateWindow()
 {
 	return UpdateWindow( static_cast<HWND>(m_wHandle) );
 }
+
+#ifdef _WIN64 
+typedef __int64 TLPARAM;
+typedef unsigned __int64 TWPARAM;
+#else
+typedef long TLPARAM;
+typedef unsigned int TWPARAM;
+#endif
+typedef TLPARAM TLRESULT;
 
 //wndproc
 LRESULT WINAPI _wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -75,8 +85,10 @@ LRESULT WINAPI _wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
-bool gPlatformWin::gWindow::createWindow()
+bool gPlatformWin::gWindow::createWindow( const gWINDOWPARAMS& parameters )
 {
+	m_parameters = parameters;
+
 	HWND hWnd = 0;
 
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, _wndProc, 0L, 0L,
@@ -116,7 +128,7 @@ void gPlatformWin::gWindow::adjustRect( void* _rect )
 //		*** class gPlatformWin ***
 //
 // ------------------------------------
-gPlatformWin::gPlatformWin() : m_windowParameters("",0,0)
+gPlatformWin::gPlatformWin()
 {
 	char path[MAX_PATH];
 	GetCurrentDirectory(sizeof(path), path); 
@@ -131,6 +143,12 @@ gPlatformWin::~gPlatformWin()
 
 // filesystem : files
 SPFILE gPlatformWin::openFile(const gString& filename, bool writeable, bool binary, bool addAtEnd ) const
+{
+	SPFILE spFile = std::make_shared<gFile>(filename, writeable, binary, addAtEnd);
+	return spFile;
+}
+
+SPFILE gPlatformWin::openFile(const char* filename, bool writeable, bool binary, bool addAtEnd) const
 {
 	SPFILE spFile = std::make_shared<gFile>(filename, writeable, binary, addAtEnd);
 	return spFile;
@@ -217,24 +235,9 @@ bool gPlatformWin::getDirectoryDialog(gString& inoutDir) const
 }
 
 // window
-void* gPlatformWin::getWindowHanlde()
+gPlatformWin::IWindow* gPlatformWin::getWindow()
 {
-	return 0;
-}
-
-void gPlatformWin::showWindow( bool show )
-{
-
-}
-
-void gPlatformWin::setWindowParameters(const IPlatform::gWINDOWPARAMS& parameters)
-{
-	m_windowParameters = parameters;
-}
-
-const IPlatform::gWINDOWPARAMS& gPlatformWin::getWindowParameters() const
-{
-	return m_windowParameters;
+	return &m_window;
 }
 
 IPlatform::ePLATFORMTYPE gPlatformWin::getPlatformType() const
@@ -242,10 +245,38 @@ IPlatform::ePLATFORMTYPE gPlatformWin::getPlatformType() const
 	return IPlatform::ePLATFORMTYPE::PT_WIN;
 }
 
-
 bool gPlatformWin::initialize()
 {
+	m_window.createWindow(IPlatform::IWindow::gWINDOWPARAMS("3RDE_TEST", 800, 600));
 	return true;
+}
+
+bool gPlatformWin::runMainLoop()
+{
+	try
+	{
+		MSG msg = { 0 };
+		while (true)
+		{
+			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			{
+				if (msg.message == WM_QUIT)
+				{
+					//cleanUp();
+					return true;
+				};
+
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+			//if (frame_move())
+			//	frame_render();
+		}
+	}
+	catch (const IExceptionHandler& e)
+	{
+		return false;
+	}
 }
 
 bool gPlatformWin::finalize()

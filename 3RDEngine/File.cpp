@@ -1,34 +1,74 @@
 #include "File.h"
+#include "Engine.h" // for exception handler
+#include <assert.h>
 
-gFile::gFile(const gString& filename, bool writeable, 
-	bool binary, bool addAtEnd) : m_filename(filename)
+gFile::gFile(const char* filename, bool writeable, 
+	bool binary, bool addAtEnd, size_t bufferSize) :
+								  m_filename(filename),
+								  m_isWritable(writeable),
+								  m_isBinary(binary)
 {
-	auto mode = writeable ? std::ios_base::in : std::ios_base::in | std::ios_base::out;
-	if (binary) mode |= std::ios_base::binary;
-	if (addAtEnd) mode |= std::ios_base::ate | std::ios_base::app;
+	gString mode;
 
-	m_fstream.open(m_filename, mode);
+	writeable ? mode += 'w' : mode += 'r';
+	binary ? mode += 'b' : mode += 't';
+
+	ECHECK(!fopen_s(&m_file, m_filename.c_str(), mode.c_str()),
+		("Cannot open file: " + m_filename).c_str());
+
+	if (bufferSize > 1)
+		setvbuf(m_file, 0, _IOFBF, bufferSize);
+}
+
+
+gFile::gFile( const gString& filename, bool writeable,
+	bool binary, bool addAtEnd, size_t bufferSize ) :
+								  m_filename(filename),
+								  m_isWritable(writeable), 
+						          m_isBinary(binary)
+{
+	gString mode;
+
+	if (addAtEnd)
+		mode = "a";
+	else
+		writeable ? mode = 'w' : mode = 'r';
+
+	binary ? mode += 'b' : mode += 't';
+
+	ECHECK( !fopen_s( &m_file, m_filename.c_str(), mode.c_str() ), 
+		( "Cannot open file: " + m_filename).c_str() );
+
+	if ( bufferSize > 1 )
+		setvbuf(m_file, 0, _IOFBF, bufferSize);
 }
 
 gFile::~gFile()
 {
-	if (m_fstream.is_open())
-		m_fstream.close();
+	if (m_file)
+		if (!fclose(m_file))
+			ELOG((gString("Failed close file:") + m_filename).c_str());
+
 }
 
 bool gFile::flush() const // write buffer to disk if possibly
 {
-	return false;
+	return fflush(m_file);
+}
+
+bool gFile::isOpened() const
+{
+	return(m_file != 0);
 }
 
 bool gFile::isBinary() const
 {
-	return 0;
+	return m_isBinary;
 }
 
 bool gFile::isWriteable() const
 {
-	return 0;
+	return m_isWritable;
 }
 
 const gString& gFile::getFileName() const
@@ -38,70 +78,128 @@ const gString& gFile::getFileName() const
 
 size_t gFile::getFileSize() const
 {
-	return 0;
+	size_t ret, curPos = tell();
+	seek( 0, gFileSeek::GFS_END );
+	ret = tell();
+	seek( curPos, gFileSeek::GFS_SET );
+	return ret;
 }
 
-bool gFile::seek(gFileSeek mode, unsigned int position) const
+bool gFile::seek( long position, gFileSeek mode ) const
 {
-	return 0;
+	int origin;
+	switch (mode)
+	{
+	case gFileSeek::GFS_SET:
+		origin = SEEK_SET; break;
+	case gFileSeek::GFS_CURRENT:
+		origin = SEEK_CUR; break;
+	case gFileSeek::GFS_END:
+		origin = SEEK_END; break;
+	};
+	return fseek(m_file, position, origin);
 }
 
-size_t gFile::tell() const
+long gFile::tell() const
 {
-	return 0;
+	return ftell( m_file );
 }
 
 size_t gFile::read(void* dst, size_t size) const
 {
-	return 0;
+	return fread_s( dst, size, 1, size, m_file );
 }
 
-size_t gFile::write(void* src, size_t size)
+size_t gFile::write( void* src, size_t size )
 {
-	return 0;
+	assert(!m_isWritable && "Write to ReadOnly file!");
+	return fwrite( src, 1, size, m_file );
 }
 
-size_t gFile::gets(gString& gString) const
+bool gFile::gets( gString& str ) const
 {
-	return 0;
+	return 0 != fgets( &str[0], str.capacity(), m_file );
 }
 
-size_t gFile::gets(char* dst, size_t buffsz) const
+bool gFile::gets( char* dst, size_t buffsz ) const
 {
-	return 0;
+	return 0 != fgets( dst, buffsz, m_file);
 }
 
-size_t gFile::puts(const gString& gString)
+bool gFile::puts( const gString& str )
 {
-	return 0;
+	return 0 != fputs( str.c_str(), m_file );
 }
 
-size_t gFile::puts(const char* src)
+bool gFile::puts(const char* src)
 {
-	return 0;
+	return 0 != fputs(src, m_file);
 }
 
 size_t gFile::printf( const char* fmt, ... )
 {
-	return 0;
+	int result = 0;
+
+	va_list argList;
+	__crt_va_start(argList, fmt);
+	result = _vfprintf_s_l(m_file, fmt, NULL, argList);
+	__crt_va_end(argList);
+
+	return result;
+}
+
+size_t gFile::printf( const gString& fmt, ...)
+{
+	int result = 0;
+
+	va_list argList;
+	const char* str = fmt.c_str();
+	__crt_va_start( argList, str );
+	result = _vfprintf_s_l(m_file, str, NULL, argList);
+	__crt_va_end(argList);
+
+	return result;
 }
 
 size_t gFile::scanf( const char* fmt, ... ) const
 {
-	return 0;
+	int result = 0;
+	va_list argList;
+	__crt_va_start(argList, fmt);
+	result = _vfscanf_s_l(m_file, fmt, NULL, argList);
+	__crt_va_end(argList);
+
+	return result;
+}
+
+size_t gFile::scanf(const gString& fmt, ...) const
+{
+	int result = 0;
+	va_list argList;
+	const char* str = fmt.c_str();
+	__crt_va_start(argList, str);
+	result = _vfscanf_s_l(m_file, str, NULL, argList);
+	__crt_va_end(argList);
+
+	return result;
 }
 
 char gFile::getc(bool nostep) const
 {
-	return 0;
+	if(nostep)
+		return static_cast<char>( fgetc(m_file) );
+
+	char c = fgetc(m_file);
+	seek(-1, gFileSeek::GFS_CURRENT);
+	return c;
 }
 
 bool gFile::putc(char c)
 {
-	return 0;
+	return fputc( static_cast<int>(c), m_file);
 }
 
 bool gFile::eof() const
 {
-	return 0;
+	return feof(m_file);
 }

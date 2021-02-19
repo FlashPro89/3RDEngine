@@ -5,40 +5,46 @@
 
 #include "Interfaces.h"
 
-class gPlatformWin :
-    public IPlatform
+class gPlatformWin : public IPlatform
 {
 public:
+
+	// ***  make friendly to class gWindow;
+	bool initialize();
 
 	class gWindow : public IWindow
 	{
 	public:
-		gWindow( const gWINDOWPARAMS& parameters );
-		~gWindow( );
+		gWindow();
+		~gWindow();
 
 		// window
-		void* getWindowHanlde(); // return weak pointer of hWnd
-		void showWindow( bool show );
-		void setWindowParameters( const gWINDOWPARAMS& parameters );
-		const gWINDOWPARAMS& getWindowParameters( ) const;
+		void* getWindowHanlde(); // return hWnd casted to pointer
+		void showWindow(bool show);
+		void setWindowParameters(const gWINDOWPARAMS& parameters);
+		const gWINDOWPARAMS& getWindowParameters() const;
 		bool updateWindow();
 
 	protected:
-		gWindow() {};
 		gWindow(const gWindow&) {};
 
-		bool createWindow();
+		bool createWindow(const gWINDOWPARAMS& parameters);
 		void adjustRect(void* rect);
 
 		gWINDOWPARAMS m_parameters;
 		void* m_wHandle;
+
+		//friend class gPlatformWin;
+		friend 	bool gPlatformWin::initialize();
 	};
 
 	gPlatformWin();
 	~gPlatformWin();
 
 	// filesystem : files
-	SPFILE openFile(const gString& filename, bool writeable, bool binary = false, bool addAtEnd = false) const;
+	SPFILE openFile(const gString& filename, bool writeable, bool binary, bool addAtEnd ) const;
+	SPFILE openFile(const char* filename, bool writeable, bool binary = false, bool addAtEnd = false) const;
+
 	bool isFileExist(const gString& fileName) const;
 	bool deleteFile(const gString& fileName) const;
 	bool moveFile(const gString& srcName, const gString& dstName) const;
@@ -62,26 +68,21 @@ public:
 	bool getSaveFileDialog( gString& inoutName, const gString& filter) const;
 	bool getDirectoryDialog( gString& inoutDir ) const;
 
-	// window
-	void* getWindowHanlde();
-	void showWindow(bool show);
-	void setWindowParameters(const IPlatform::gWINDOWPARAMS& parameters);
-	const IPlatform::gWINDOWPARAMS& getWindowParameters() const;
+	//window
+	IWindow* getWindow();
 
 	IPlatform::ePLATFORMTYPE getPlatformType() const;
 
-	bool initialize();
+	bool runMainLoop();
 
 protected:
 	gPlatformWin( const gPlatformWin& other ) {};
 
 	bool finalize();
 
+	gWindow m_window;
 	gString m_engineFolderName;
 	gString m_currentFolderName;
-
-	IPlatform::gWINDOWPARAMS m_windowParameters;
-
 };
 
 #endif

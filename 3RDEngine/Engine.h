@@ -21,6 +21,7 @@ protected:
 
 #define ETROW(msg) throw( gEngineExceptionHandler( __FUNCSIG__, __FILE__, __LINE__, (msg) ) )
 #define ECHECK(e,msg) if(!e)throw( gEngineExceptionHandler( __FUNCSIG__, __FILE__, __LINE__, (msg) ) )
+#define ELOG//(msg)
 
 class g3RDEngine : public I3RDEngine
 {
@@ -28,9 +29,11 @@ public:
 	g3RDEngine();
 	~g3RDEngine();
 
+	// need move to GraphicsSystem
 	eRENDERAPI getLatestSupportedGAPI();
 
-	bool initialize( eRENDERAPI gapi );
+	void setApplicationName(const char* applicationName);
+	bool initialize( const char* config, bool useAsConfigBuffer );
 	bool run();
 
 	//objects getters
@@ -48,6 +51,7 @@ public:
 protected:
 	bool finalize();
 
+	gString m_applicationName;
 	eRENDERAPI m_gapi;
 
 	SPPLATFORM m_spPlatform;
@@ -60,6 +64,8 @@ protected:
 	SPUSERINTERFACE m_spUserInterface;
 	SPSCRIPTS m_spScripts;
 	SPLOGGER m_spLogger;
+	SPCONFIGURATION m_spConfiguration;
+
 };
 
 #endif

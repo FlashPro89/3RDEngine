@@ -32,12 +32,11 @@ public:
 	I3RDEngine() {}
 	virtual ~I3RDEngine() {};
 
-	virtual bool run() = 0;
-	virtual bool initialize( eRENDERAPI api ) = 0;
-
-	virtual eRENDERAPI getLatestSupportedGAPI() = 0;
-
 	static SP3RDENGINE get(); // return shared pointer of engine single instance 
+
+	virtual void setApplicationName( const char* applicationName ) = 0;
+	virtual bool initialize( const char* config, bool useAsConfigBuffer = false ) = 0;
+	virtual bool run() = 0; // run main game loop, initialize first
 
 protected:
 	virtual bool finalize() = 0;

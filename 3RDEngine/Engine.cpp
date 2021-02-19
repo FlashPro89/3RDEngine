@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "Engine.h"
 #include "PlatformWin.h"
+#include "Configuration.h"
 
 using namespace std;
 // ------------------------------------
@@ -50,23 +51,33 @@ eRENDERAPI g3RDEngine::getLatestSupportedGAPI()
 	return eRENDERAPI::RA_NOT_SUPPORT; // заглушка
 }
 
-bool g3RDEngine::initialize(eRENDERAPI api)
+void g3RDEngine::setApplicationName( const char* applicationName )
+{
+	m_applicationName = applicationName;
+}
+
+bool g3RDEngine::initialize(const char* config, bool useAsConfigBuffer)
 {
 	try
 	{
+		// At the beginning create systems, and then initialize it
+		// Create platform system
 #ifdef _WIN32
 		m_spPlatform = std::make_shared<gPlatformWin>();
 #else
-		static_assert( false, "Only Windows platform supported now!");
+		static_assert(false, "Only Windows platform supported now!");
 #endif
+	
+		// Create configuration
+		m_spConfiguration = 
+			std::make_shared<gConfiguration>(m_spPlatform,config, useAsConfigBuffer);
 
-		switch (api)
-		{
-		case eRENDERAPI::RA_DX9:
-			return true;
-		case eRENDERAPI::RA_DX12:
-			return true;
-		}
+		// Try to init systems ( first init config for all systems )
+		ECHECK(m_spConfiguration->initialize(), "Failed load configuration file!");
+		ECHECK(m_spPlatform->initialize(), "Failed platform system initialization!");
+
+		// Show window 
+		m_spPlatform->getWindow()->showWindow(true);
 	}
 	catch (const gEngineExceptionHandler& e)
 	{
@@ -74,12 +85,15 @@ bool g3RDEngine::initialize(eRENDERAPI api)
 		MessageBox( 0, e.getExceptionDescription(), "3RDE Game Engine", MB_ICONERROR );
 		finalize();
 	}
-	return false;
+	return true;
 }
 
 bool g3RDEngine::run()
 {
-	return true;
+	if (m_spPlatform.get() == 0) 
+		return false;
+
+	return( m_spPlatform->runMainLoop() );
 }
 
 bool g3RDEngine::finalize()

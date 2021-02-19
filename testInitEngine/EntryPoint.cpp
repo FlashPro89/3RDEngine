@@ -502,8 +502,8 @@ int WINAPI WinMain
 	mathlib_test();
 	testASM();
 
-	if(  engine->initialize(eRENDERAPI::RA_DX12) )
-		engine->run();
-
-	return 0;
+	if(  engine->initialize("../config/testapp.ini") )
+		return engine->run();
+	else
+		return -1;
 }

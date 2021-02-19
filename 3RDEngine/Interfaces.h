@@ -22,6 +22,7 @@ public:
 protected:
 	ISystem() {};
 	ISystem(const ISystem& s) {}
+
 	virtual bool finalize() = 0;
 };
 
@@ -40,7 +41,7 @@ class IFile
 {
 public:
 
-	enum gFileSeek
+	enum class gFileSeek
 	{
 		GFS_SET = 0,
 		GFS_CURRENT = 1,
@@ -51,29 +52,32 @@ public:
 
 	virtual bool flush() const = 0; // write buffer to disk if possibly
 
+	virtual bool isOpened() const = 0;
 	virtual bool isBinary() const = 0;
 	virtual bool isWriteable() const = 0;
 	virtual const gString& getFileName() const = 0;
 
-	virtual unsigned int getFileSize() const = 0;
+	virtual size_t getFileSize() const = 0;
 
 	// pos methods
-	virtual bool seek( gFileSeek mode, unsigned int position = 0 ) const = 0;
-	virtual size_t tell() const = 0;
+	virtual bool seek( long position, gFileSeek mode = gFileSeek::GFS_SET ) const = 0;
+	virtual long tell() const = 0;
 
 	// binary I/O
 	virtual size_t read( void* dst, size_t size ) const = 0;
 	virtual size_t write( void* src, size_t size ) = 0;
 
 	// text I/O
-	virtual size_t gets(gString& gString) const = 0;
-	virtual size_t gets(char* dst, size_t buffsz) const = 0;
-	virtual size_t puts(const gString& gString) = 0;
-	virtual size_t puts(const char* src) = 0;
+	virtual bool gets(gString& gString) const = 0;
+	virtual bool gets(char* dst, size_t buffsz) const = 0;
+	virtual bool puts(const gString& gString) = 0;
+	virtual bool puts(const char* src) = 0;
 
 	// formatted text I/O
 	virtual size_t printf( const char* fmt, ... ) = 0;
+	virtual size_t printf( const gString& fmt, ...) = 0;
 	virtual size_t scanf( const char* fmt, ... ) const = 0;
+	virtual size_t scanf( const gString& fmt, ...) const = 0;
 
 	virtual char getc( bool nostep = true ) const = 0;
 	virtual bool putc( char c ) = 0;
@@ -101,6 +105,7 @@ protected:
 };
 typedef std::shared_ptr<IListEnumerator> SPLISTENUMERATOR;
 
+
 class IPlatform : public ISystem
 {
 public:
@@ -113,24 +118,25 @@ public:
 		PL_IOS
 	};
 
-	struct gWINDOWPARAMS
+	class IWindow 
 	{
-		gWINDOWPARAMS() : name(""), width(0), height(0), fullscreen(false), x(0), y(0) {};
-		gWINDOWPARAMS(gString _name, unsigned short _width, unsigned short _height, 
-			bool _fullscreen = false, unsigned _x = 0, unsigned short _y = 0) :
-				name(_name), width(_width), height(_height), fullscreen(_fullscreen), x(_x), y (_y){}
-		
-		gString name;
-		unsigned short width;
-		unsigned short height;
-		unsigned short x;
-		unsigned short y;
-		bool fullscreen;
-	};
-
-	class IWindow
-	{
+	//friend class IPlatform;
 	public:
+		struct gWINDOWPARAMS
+		{
+			gWINDOWPARAMS() : name(""), width(0), height(0), fullscreen(false), x(0), y(0) {};
+			gWINDOWPARAMS(gString _name, unsigned short _width, unsigned short _height,
+				bool _fullscreen = false, unsigned _x = 0, unsigned short _y = 0) :
+				name(_name), width(_width), height(_height), fullscreen(_fullscreen), x(_x), y(_y) {}
+
+			gString name;
+			unsigned short width;
+			unsigned short height;
+			unsigned short x;
+			unsigned short y;
+			bool fullscreen;
+		};
+
 		IWindow(const gWINDOWPARAMS& parameters) {};
 		~IWindow() {};
 
@@ -148,7 +154,9 @@ public:
 	virtual ~IPlatform() {};
 
 	// filesystem : files
-	virtual SPFILE openFile(const gString& filename, bool writeable, bool binary, bool addAtEnd) const = 0;
+	virtual SPFILE openFile(const gString& filename, bool writeable, bool binary = false, bool addAtEnd = false) const = 0;
+	virtual SPFILE openFile(const char* filename, bool writeable, bool binary = false, bool addAtEnd = false) const = 0;
+
 	virtual bool isFileExist( const gString& fileName ) const = 0;
 	virtual bool deleteFile( const gString& fileName ) const = 0;
 	virtual bool moveFile( const gString& srcName, const gString& dstName ) const = 0;
@@ -172,7 +180,11 @@ public:
 	virtual bool getSaveFileDialog( gString& inoutName, const gString& filter) const = 0;
 	virtual bool getDirectoryDialog( gString& inoutDir ) const = 0;
 
+	//window
+	virtual IWindow* getWindow() = 0;
+
 	virtual ePLATFORMTYPE getPlatformType() const = 0;
+	virtual bool runMainLoop() = 0;
 
 protected:
 	IPlatform() {};
@@ -251,6 +263,14 @@ protected:
 	ILogger() {};
 };
 
+class IConfiguration : public ISystem
+{
+public:
+	virtual ~IConfiguration() {};
+protected:
+	IConfiguration() {};
+};
+
 typedef std::shared_ptr<IPlatform> SPPLATFORM;
 typedef std::shared_ptr<IResources> SPRESOURCES;
 typedef std::shared_ptr<IInput> SPINPUT;
@@ -261,6 +281,7 @@ typedef std::shared_ptr<ISceneGraph> SPSCENEGRAPH;
 typedef std::shared_ptr<IUserInterface> SPUSERINTERFACE;
 typedef std::shared_ptr<IScripts> SPSCRIPTS;
 typedef std::shared_ptr<ILogger> SPLOGGER;
+typedef std::shared_ptr<IConfiguration> SPCONFIGURATION;
 
 
 #endif
