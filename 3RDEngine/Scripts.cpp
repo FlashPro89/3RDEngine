@@ -10,14 +10,14 @@
 
 gVirtualMachine::gVirtualMachine()
 {
-	m_pLuaState = luaL_newstate();
-	luaL_openlibs(m_pLuaState);
+	//m_pLuaState = luaL_newstate();
+	//luaL_openlibs(m_pLuaState);
 }
 
 gVirtualMachine::~gVirtualMachine()
 {
-	if (m_pLuaState)
-		lua_close(m_pLuaState);
+	//if (m_pLuaState)
+	//	lua_close(m_pLuaState);
 }
 
 PLUASTATE gVirtualMachine::get()
