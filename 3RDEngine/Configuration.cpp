@@ -34,6 +34,7 @@ bool gConfiguration::initialize()
 
 bool gConfiguration::parseConfiguration()
 {
+    m_file.reset();
     return true;
 }
 

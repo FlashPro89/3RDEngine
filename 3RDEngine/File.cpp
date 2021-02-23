@@ -46,9 +46,13 @@ gFile::gFile( const gString& filename, bool writeable,
 gFile::~gFile()
 {
 	if (m_file)
-		if (!fclose(m_file))
-			ELOG((gString("Failed close file:") + m_filename).c_str());
-
+	{
+		int err = fclose(m_file);
+		if (err != 0)
+		{
+			ELOGWRN((gString("Failed close file:") + m_filename).c_str());
+		}
+	}
 }
 
 bool gFile::flush() const // write buffer to disk if possibly
@@ -136,52 +140,63 @@ bool gFile::puts(const char* src)
 	return 0 != fputs(src, m_file);
 }
 
-size_t gFile::printf( const char* fmt, ... )
+size_t gFile::print( const char* fmt, ... )
 {
 	int result = 0;
 
 	va_list argList;
 	__crt_va_start(argList, fmt);
-	result = _vfprintf_s_l(m_file, fmt, NULL, argList);
+	result = printVA( fmt, argList);
 	__crt_va_end(argList);
 
 	return result;
 }
 
-size_t gFile::printf( const gString& fmt, ...)
+size_t gFile::print( const gString& fmt, ...)
 {
 	int result = 0;
 
 	va_list argList;
 	const char* str = fmt.c_str();
 	__crt_va_start( argList, str );
-	result = _vfprintf_s_l(m_file, str, NULL, argList);
+	result = printVA( str, argList);
 	__crt_va_end(argList);
 
 	return result;
 }
 
-size_t gFile::scanf( const char* fmt, ... ) const
+size_t gFile::scan( char* fmt, ... ) const
 {
 	int result = 0;
 	va_list argList;
 	__crt_va_start(argList, fmt);
-	result = _vfscanf_s_l(m_file, fmt, NULL, argList);
+	result = scanVA( fmt, argList );
 	__crt_va_end(argList);
 
 	return result;
 }
 
-size_t gFile::scanf(const gString& fmt, ...) const
+size_t gFile::scan( gString& fmt, ...) const
 {
 	int result = 0;
 	va_list argList;
-	const char* str = fmt.c_str();
+	char* str = &fmt[0];
 	__crt_va_start(argList, str);
-	result = _vfscanf_s_l(m_file, str, NULL, argList);
+	result = scanVA(str, argList);
 	__crt_va_end(argList);
 
 	return result;
+}
+
+size_t gFile::printVA(const char* fmt, va_list args)
+{
+	return _vfprintf_s_l(m_file, fmt, NULL, args);
+
+}
+
+size_t gFile::scanVA(char* fmt, va_list args) const
+{
+	return _vfscanf_s_l(m_file, fmt, NULL, args);
 }
 
 char gFile::getc(bool nostep) const
@@ -203,3 +218,4 @@ bool gFile::eof() const
 {
 	return feof(m_file);
 }
+

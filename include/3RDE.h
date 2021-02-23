@@ -29,6 +29,7 @@ typedef std::weak_ptr<I3RDEngine> WP3RDENGINE;
 class _3RDE_API_ I3RDEngine
 {
 public:
+
 	I3RDEngine() {}
 	virtual ~I3RDEngine() {};
 

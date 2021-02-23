@@ -2,9 +2,8 @@
 
 #ifndef _3RDE_FILE_
 #define _3RDE_FILE_
-
-#include "Interfaces.h"
 #include <cstdio>
+#include "Interfaces.h"
 
 class gFile : public IFile
 {
@@ -36,10 +35,14 @@ public:
 	bool puts( const gString& str );
 	bool puts( const char* src );
 
-	size_t printf(const char* fmt, ...);
-	size_t printf(const gString& fmt, ...);
-	size_t scanf(const char* fmt, ...) const;
-	size_t scanf(const gString& fmt, ...) const;
+	size_t print(const char* fmt, ...);
+	size_t print(const gString& fmt, ...);
+	size_t scan(char* fmt, ...) const;
+	size_t scan(gString& fmt, ...) const;
+
+	//for logger
+	size_t printVA(const char* fmt, va_list args);
+	size_t scanVA(char* fmt, va_list args) const;
 
 	char getc(bool nostep = true) const;
 	bool putc(char c);
@@ -54,6 +57,8 @@ protected:
 	gString m_filename;
 	bool m_isWritable;
 	bool m_isBinary;
+
+
 };
 
 #endif

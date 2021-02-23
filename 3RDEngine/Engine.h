@@ -19,10 +19,6 @@ protected:
 	gString m_exceptionDescription;
 };
 
-#define ETROW(msg) throw( gEngineExceptionHandler( __FUNCSIG__, __FILE__, __LINE__, (msg) ) )
-#define ECHECK(e,msg) if(!e)throw( gEngineExceptionHandler( __FUNCSIG__, __FILE__, __LINE__, (msg) ) )
-#define ELOG//(msg)
-
 class g3RDEngine : public I3RDEngine
 {
 public:
@@ -37,16 +33,17 @@ public:
 	bool run();
 
 	//objects getters
-	SPPLATFORM Platform();
-	SPRESOURCES	Resources();
-	SPINPUT	Input();
-	SPGRAPHICS Graphics();
-	SPSOUNDS Sounds();
-	SPPHYSICS Physics();
-	SPSCENEGRAPH SceneGraph();
-	SPUSERINTERFACE UserInterface();
-	SPSCRIPTS Scripts();
-	SPLOGGER Logger();
+	SPPLATFORM getPlatform();
+	SPRESOURCES	getResources();
+	SPINPUT	getInput();
+	SPGRAPHICS getGraphics();
+	SPSOUNDS getSounds();
+	SPPHYSICS getPhysics();
+	SPSCENEGRAPH getSceneGraph();
+	SPUSERINTERFACE getUserInterface();
+	SPSCRIPTS getScripts();
+	SPLOGGER getLogger();
+	SPCONFIGURATION getConfiguration();
 
 protected:
 	bool finalize();
@@ -65,8 +62,26 @@ protected:
 	SPSCRIPTS m_spScripts;
 	SPLOGGER m_spLogger;
 	SPCONFIGURATION m_spConfiguration;
-
 };
+
+#define ENGINE (static_cast<g3RDEngine*>(I3RDEngine::get().get()))
+#define EPLATFORM (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getPlatform()
+#define ERESOURCES (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getResources()
+#define EINPUT (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getInput()
+#define EGRAPHICS (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getGraphics()
+#define ESOUNDS (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getSounds()
+#define EPHYSICS (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getPhysics()
+#define ESCENEGRAPH (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getSceneGraph()
+#define EUI (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getUserInterface()
+#define ESCRIPTS (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getScripts()
+#define ELOGGER (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getLogger()
+#define ECONFIG (static_cast<g3RDEngine*>(I3RDEngine::get().get()))->getConfiguration()
+
+#define ETROW(msg) throw( gEngineExceptionHandler( __FUNCSIG__, __FILE__, __LINE__, (msg) ) )
+#define ECHECK(e,msg) if(!e)throw( gEngineExceptionHandler( __FUNCSIG__, __FILE__, __LINE__, (msg) ) )
+#define ELOGMSG(...) if( I3RDEngine::get().use_count()!=0)ELOGGER->logMessage(__VA_ARGS__)
+#define ELOGWRN(...) if( I3RDEngine::get().use_count()!=0)ELOGGER->logWarning(__VA_ARGS__)
+#define ELOGERR(...) if( I3RDEngine::get().use_count()!=0)ELOGGER->logError(__VA_ARGS__)
 
 #endif
 

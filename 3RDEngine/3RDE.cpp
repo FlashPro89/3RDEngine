@@ -56,13 +56,12 @@ SP3RDENGINE I3RDEngine::get()
     static WP3RDENGINE s_wpEngine;
 
     SP3RDENGINE spEngine;
-    if (s_wpEngine.expired())
+    if ( s_wpEngine.expired() )
     {
         spEngine = std::make_shared<g3RDEngine>();
         s_wpEngine = spEngine;
     }
     return 	s_wpEngine.lock();
-    
 }
 
 _3RDE_API_ SP3RDENGINE Get3RDEngine()

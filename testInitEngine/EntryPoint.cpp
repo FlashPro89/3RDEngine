@@ -498,6 +498,7 @@ int WINAPI WinMain
 	auto r = I3RDEngine::get();
 	use = engine.use_count(); // test
 	unique = engine.unique(); // test
+	
 
 	mathlib_test();
 	testASM();

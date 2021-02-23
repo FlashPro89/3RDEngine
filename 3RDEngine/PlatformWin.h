@@ -34,7 +34,6 @@ public:
 		gWINDOWPARAMS m_parameters;
 		void* m_wHandle;
 
-		//friend class gPlatformWin;
 		friend 	bool gPlatformWin::initialize();
 	};
 

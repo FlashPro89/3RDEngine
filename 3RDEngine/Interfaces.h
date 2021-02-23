@@ -8,15 +8,14 @@
 
 typedef std::string gString;
 
-typedef unsigned char uc;
-typedef unsigned short us;
-typedef unsigned int ui;
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+typedef unsigned int uint;
 
 class ISystem
 {
 public:
 	virtual ~ISystem() {};
-
 	virtual bool initialize() = 0;
 
 protected:
@@ -74,10 +73,10 @@ public:
 	virtual bool puts(const char* src) = 0;
 
 	// formatted text I/O
-	virtual size_t printf( const char* fmt, ... ) = 0;
-	virtual size_t printf( const gString& fmt, ...) = 0;
-	virtual size_t scanf( const char* fmt, ... ) const = 0;
-	virtual size_t scanf( const gString& fmt, ...) const = 0;
+	virtual size_t print( const char* fmt, ... ) = 0;
+	virtual size_t print( const gString& fmt, ...) = 0;
+	virtual size_t scan( char* fmt, ... ) const = 0;
+	virtual size_t scan( gString& fmt, ...) const = 0;
 
 	virtual char getc( bool nostep = true ) const = 0;
 	virtual bool putc( char c ) = 0;
@@ -86,6 +85,7 @@ public:
 protected:
 	IFile() {};
 	IFile(const IFile&) {};
+
 };
 typedef std::shared_ptr<IFile> SPFILE;
 
@@ -197,6 +197,7 @@ public:
 	virtual ~IResources() {};
 protected:
 	IResources() {};
+	IResources(IResources&) {};
 };
 
 class IInput : public ISystem
@@ -205,6 +206,7 @@ public:
 	virtual ~IInput() {};
 protected:
 	IInput() {};
+	IInput(IInput&) {};
 };
 
 class IGraphics : public ISystem
@@ -213,6 +215,7 @@ public:
 	virtual ~IGraphics() {};
 protected:
 	IGraphics() {};
+	IGraphics(IGraphics&) {};
 };
 
 class ISounds : public ISystem
@@ -221,6 +224,7 @@ public:
 	virtual ~ISounds() {};
 protected:
 	ISounds() {};
+	ISounds(const 	ISounds&) {};
 };
 
 class IPhysics : public ISystem
@@ -229,6 +233,8 @@ public:
 	virtual ~IPhysics() {};
 protected:
 	IPhysics() {};
+	IPhysics( const IPhysics&) {};
+
 };
 
 class ISceneGraph : public ISystem
@@ -237,6 +243,8 @@ public:
 	virtual ~ISceneGraph() {};
 protected:
 	ISceneGraph() {};
+	ISceneGraph(const ISceneGraph&) {};
+
 };
 
 class IUserInterface : public ISystem
@@ -245,6 +253,7 @@ public:
 	virtual ~IUserInterface() {};
 protected:
 	IUserInterface() {};
+	IUserInterface(const IUserInterface&) {};
 };
 
 class IScripts : public ISystem
@@ -253,14 +262,31 @@ public:
 	virtual ~IScripts() {};
 protected:
 	IScripts() {};
+	IScripts(const IScripts&) {};
 };
 
 class ILogger : public ISystem
 {
 public:
 	virtual ~ILogger() {};
+
+	enum class eLoggerLevel
+	{
+		GLL_MESSAGE,
+		GLL_WARNING,
+		GLL_ERROR,
+	};
+
+	virtual eLoggerLevel getLoggerMinLevel() = 0;
+	virtual void setLoggerMinLevel(eLoggerLevel level) = 0;
+
+	virtual void logMessage(const gString& fmt, ...) = 0;
+	virtual void logWarning(const gString& fmt, ...) = 0;
+	virtual void logError(const gString& fmt, ...) = 0;
+
 protected:
 	ILogger() {};
+	ILogger(const ILogger&) {};
 };
 
 class IConfiguration : public ISystem
