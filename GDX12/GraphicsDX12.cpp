@@ -74,7 +74,7 @@ bool gGraphicsDX12::initialize()
     // Create DXGI factory
     //-------------------------------------------------------------
     ComPtr < IDXGIFactory4 > factory;
-    ECHECKHR(CreateDXGIFactory1(IID_PPV_ARGS(&factory)), // удалить если все скомпилится
+    ECHECKHR(CreateDXGIFactory1(IID_PPV_ARGS(&factory)), 
         "Cannot create DXGI Factory1!");
     ECHECKHR(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&factory)),
         "Cannot create DXGI Factory2!");
