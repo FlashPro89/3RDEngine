@@ -3,6 +3,7 @@
 
 //#include "../lua/lua.hpp"
 
+
 #ifdef _DEBUG
 #ifdef _WIN64
 #pragma comment ( lib, "../lib/x64/lua_d.lib" )
@@ -54,12 +55,14 @@ using namespace std;
 SP3RDENGINE I3RDEngine::get()
 {  
     static WP3RDENGINE s_wpEngine;
+    bool isExp = s_wpEngine.expired();
 
     SP3RDENGINE spEngine;
     if ( s_wpEngine.expired() )
     {
         spEngine = std::make_shared<g3RDEngine>();
         s_wpEngine = spEngine;
+        isExp = s_wpEngine.expired();
     }
     return 	s_wpEngine.lock();
 }

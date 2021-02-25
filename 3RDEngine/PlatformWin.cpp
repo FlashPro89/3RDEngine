@@ -1,3 +1,5 @@
+#ifdef _WIN32
+
 #include "PlatformWin.h"
 #include "File.h"
 #include "Engine.h"
@@ -7,6 +9,12 @@
 
 
 #define WINDOW_STYLE ( WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX | WS_CAPTION )
+
+// ------------------------------------
+//
+//		*** class gPlatformWin::gWindow ***
+//
+// ------------------------------------
 
 gPlatformWin::gWindow::gWindow()
 {
@@ -253,29 +261,22 @@ bool gPlatformWin::initialize()
 
 bool gPlatformWin::runMainLoop()
 {
-	try
+	MSG msg = { 0 };
+	while (true)
 	{
-		MSG msg = { 0 };
-		while (true)
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			if (msg.message == WM_QUIT)
 			{
-				if (msg.message == WM_QUIT)
-				{
-					//cleanUp();
-					return true;
-				};
+				//cleanUp();
+				return true;
+			};
 
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-			//if (frame_move())
-			//	frame_render();
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 		}
-	}
-	catch (const IExceptionHandler& e)
-	{
-		return false;
+		//if (frame_move())
+		//	frame_render();
 	}
 }
 
@@ -283,3 +284,5 @@ bool gPlatformWin::finalize()
 {
 	return true;
 }
+
+#endif

@@ -3,6 +3,8 @@
 #ifndef _3RDE_PLATFORM_WIN_
 #define _3RDE_PLATFORM_WIN_
 
+#ifdef _WIN32
+
 #include "Interfaces.h"
 
 class gPlatformWin : public IPlatform
@@ -84,5 +86,6 @@ protected:
 	gString m_currentFolderName;
 };
 
+#endif
 #endif
 

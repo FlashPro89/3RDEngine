@@ -37,7 +37,7 @@ public:
 
 	virtual void setApplicationName( const char* applicationName ) = 0;
 	virtual bool initialize( const char* config, bool useAsConfigBuffer = false ) = 0;
-	virtual bool run() = 0; // run main game loop, initialize first
+	virtual int run() = 0; // run main game loop, initialize first
 
 protected:
 	virtual bool finalize() = 0;

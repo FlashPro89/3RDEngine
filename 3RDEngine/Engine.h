@@ -5,7 +5,33 @@
 
 #include "../include/3RDE.h"
 #include "Interfaces.h"
-#include <string>
+
+template < class I, typename ... InterfaceCreationArgs > class gPlugin
+{
+public:
+
+	gPlugin(const gString& libFileName, const gString& fnCreateName, const gString& fnDestroyName);
+	gPlugin(const gPlugin& other); // for init after handler class _ctor
+	gPlugin();
+	~gPlugin();
+
+	void setParameters(const gString& libFileName, const gString& fnCreateName, const gString& fnDestroyName);
+	std::shared_ptr<I> createInterface(InterfaceCreationArgs ... args);
+
+protected:
+	bool initialize();
+	void finalize();
+
+	gString m_libFileName;
+	gString m_fnCreateName;
+	gString m_fnDestroyName;
+
+	typedef I* (*fnCreate)(InterfaceCreationArgs...);
+	typedef void (*fnDestroy)(I*);
+	fnCreate m_lpfnCreate;
+	fnDestroy m_lpfnDestroy;
+	void* m_dlHandle;
+};
 
 class gEngineExceptionHandler : public IExceptionHandler
 {
@@ -30,7 +56,7 @@ public:
 
 	void setApplicationName(const char* applicationName);
 	bool initialize( const char* config, bool useAsConfigBuffer );
-	bool run();
+	int run();
 
 	//objects getters
 	SPPLATFORM getPlatform();
@@ -62,6 +88,8 @@ protected:
 	SPSCRIPTS m_spScripts;
 	SPLOGGER m_spLogger;
 	SPCONFIGURATION m_spConfiguration;
+
+	gPlugin<IGraphics, SPPLATFORM, SPCONFIGURATION> m_graphicsPlugin;
 };
 
 #define ENGINE (static_cast<g3RDEngine*>(I3RDEngine::get().get()))
@@ -79,9 +107,10 @@ protected:
 
 #define ETROW(msg) throw( gEngineExceptionHandler( __FUNCSIG__, __FILE__, __LINE__, (msg) ) )
 #define ECHECK(e,msg) if(!e)throw( gEngineExceptionHandler( __FUNCSIG__, __FILE__, __LINE__, (msg) ) )
-#define ELOGMSG(...) if( I3RDEngine::get().use_count()!=0)ELOGGER->logMessage(__VA_ARGS__)
-#define ELOGWRN(...) if( I3RDEngine::get().use_count()!=0)ELOGGER->logWarning(__VA_ARGS__)
-#define ELOGERR(...) if( I3RDEngine::get().use_count()!=0)ELOGGER->logError(__VA_ARGS__)
+#define ELOGMSG(str) if( ELOGGER )ELOGGER->logMessage(str)
+#define ELOGWRN(str) if( ELOGGER )ELOGGER->logWarning(str)
+#define ELOGERR(str) if( ELOGGER )ELOGGER->logError(str)
+
 
 #endif
 

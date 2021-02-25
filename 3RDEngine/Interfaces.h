@@ -12,6 +12,8 @@ typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
 
+typedef void(*lpfnThrowException)(const gString&,const gString&,int,const gString&);
+
 class ISystem
 {
 public:
@@ -212,7 +214,27 @@ protected:
 class IGraphics : public ISystem
 {
 public:
+	struct gRenderElement
+	{
+
+	};
+
+	class IRenderQueue
+	{
+	public:
+		~IRenderQueue() {}
+
+		virtual void add(gRenderElement re) = 0;
+		virtual void execute() = 0;
+	protected:
+		IRenderQueue() {}
+	};
+
+	typedef std::shared_ptr< IGraphics::IRenderQueue> SPRENDERQUEUE;
+
 	virtual ~IGraphics() {};
+	virtual SPRENDERQUEUE getRenderQueue() = 0;
+
 protected:
 	IGraphics() {};
 	IGraphics(IGraphics&) {};
@@ -280,9 +302,13 @@ public:
 	virtual eLoggerLevel getLoggerMinLevel() = 0;
 	virtual void setLoggerMinLevel(eLoggerLevel level) = 0;
 
-	virtual void logMessage(const gString& fmt, ...) = 0;
-	virtual void logWarning(const gString& fmt, ...) = 0;
-	virtual void logError(const gString& fmt, ...) = 0;
+	virtual void logMessage(const gString& str) = 0;
+	virtual void logWarning(const gString& str) = 0;
+	virtual void logError(const gString& str) = 0;
+
+	//virtual void logMessage(const char* fmt, ...) = 0;
+	//virtual void logWarning(const char* fmt, ...) = 0;
+	//virtual void logError(const char* fmt, ...) = 0;
 
 protected:
 	ILogger() {};

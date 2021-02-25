@@ -13,8 +13,10 @@ gFile::gFile(const char* filename, bool writeable,
 	writeable ? mode += 'w' : mode += 'r';
 	binary ? mode += 'b' : mode += 't';
 
+	//ELOGMSG("Try open file: %s mode:%s", m_filename.c_str(), mode.c_str());
 	ECHECK(!fopen_s(&m_file, m_filename.c_str(), mode.c_str()),
 		("Cannot open file: " + m_filename).c_str());
+
 
 	if (bufferSize > 1)
 		setvbuf(m_file, 0, _IOFBF, bufferSize);
@@ -35,7 +37,8 @@ gFile::gFile( const gString& filename, bool writeable,
 		writeable ? mode = 'w' : mode = 'r';
 
 	binary ? mode += 'b' : mode += 't';
-
+	
+	//ELOGMSG( "Try open file: %s mode:%s", m_filename.c_str(), mode.c_str());
 	ECHECK( !fopen_s( &m_file, m_filename.c_str(), mode.c_str() ), 
 		( "Cannot open file: " + m_filename).c_str() );
 
@@ -47,7 +50,9 @@ gFile::~gFile()
 {
 	if (m_file)
 	{
+		ELOGMSG((gString("Closing file:") + m_filename).c_str());
 		int err = fclose(m_file);
+
 		if (err != 0)
 		{
 			ELOGWRN((gString("Failed close file:") + m_filename).c_str());

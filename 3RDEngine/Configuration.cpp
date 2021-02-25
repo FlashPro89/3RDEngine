@@ -1,6 +1,12 @@
 #include "Configuration.h"
 #include "Engine.h"
 
+// ------------------------------------
+//
+//		*** class gConfiguration ***
+//
+// ------------------------------------
+
 gConfiguration::gConfiguration( SPPLATFORM platform, 
     const gString& config, bool useAsConfigBuffer ) : m_config("")
 {
@@ -34,12 +40,13 @@ bool gConfiguration::initialize()
 
 bool gConfiguration::parseConfiguration()
 {
+    //parse and close file
     m_file.reset();
     return true;
 }
 
 bool gConfiguration::finalize()
 {
-    return true;
+    return false;
 }
     

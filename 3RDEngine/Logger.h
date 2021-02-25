@@ -14,9 +14,9 @@ public:
     eLoggerLevel getLoggerMinLevel();
     void setLoggerMinLevel(eLoggerLevel level);
 
-    void logMessage(const gString& fmt, ...);
-    void logWarning(const gString& fmt, ...);
-    void logError(const gString& fmt, ...);
+    void logMessage(const gString& fmt);
+    void logWarning(const gString& fmt);
+    void logError(const gString& fmt);
 
     void logMessage(const char* fmt, ...);
     void logWarning(const char* fmt, ...);
@@ -30,6 +30,9 @@ protected:
 
     bool finalize();
     gString& getDateTimeStr(gString& str) const;
+    gString& getDateStr(gString& str) const;
+    gString& getTimeStr(gString& str) const;
+
 };
 
 #endif
