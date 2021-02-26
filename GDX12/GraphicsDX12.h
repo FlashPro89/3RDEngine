@@ -68,14 +68,20 @@ protected:
 		IDXGIAdapter1** ppAdapter,
 		bool requestHighPerformanceAdapter);
 	UINT createDebugLayerIfNeeded();
-	bool createCommandQueues();
+	bool createCommandQueue();
 	bool createDevice(ComPtr<IDXGIFactory4> factory);
 	bool createSwapChain(ComPtr<IDXGIFactory4> factory);
 	bool createDescriptorHeaps();
 	bool createDepthStensil();
-	bool createFrameResource();
+	bool createFrameResources();
 	bool createDefaultRootSignature();
 	bool createDefaultPipelineState();
+	bool createCommandLists();
+	bool createFence();
+
+	void WaitForPreviousFrame();
+	void PopulateCommandList();
+
 	bool finalize();
 	SPRENDERQUEUE m_renderQueue;
 	WPPLATFORM m_wpPlatform;

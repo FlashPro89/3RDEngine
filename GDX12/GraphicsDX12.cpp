@@ -92,7 +92,7 @@ bool gGraphicsDX12::initialize()
     //-------------------------------------------------------------
     // Create command queues
     //-------------------------------------------------------------
-    ECHECK(createCommandQueues(), "Cannot create D3D12 command queues!");
+    ECHECK(createCommandQueue(), "Cannot create D3D12 command queues!");
 
     //-------------------------------------------------------------
     // Create default swap chain
@@ -105,23 +105,38 @@ bool gGraphicsDX12::initialize()
     ECHECK(createDescriptorHeaps(), "Cannot create D3D12 descriptor heaps!");
     
     //-------------------------------------------------------------
+    // Create frame resources
+    //-------------------------------------------------------------
+    ECHECK(createFrameResources(), "Cannot create D3D12 frame resources!");
+
+    //-------------------------------------------------------------
     // Create default assets
     //-------------------------------------------------------------
     ECHECK(createDefaultRootSignature(), "Cannot create D3D12 default root signature!");
-    ECHECK(createDefaultPipelineState(), "Cannot create D3D12 default pipline state!");
+    ECHECK(createDefaultPipelineState(), "Cannot create D3D12 default pipeline state!");
 
+    //-------------------------------------------------------------
+    // Create command lists
+    //-------------------------------------------------------------
+    ECHECK(createCommandLists(), "Cannot create D3D12 command lists!");
 
-    //Test clear target
-    HRESULT hr = m_cpCommAllocator->Reset();
-    if (FAILED(hr))
-        throw("CommandAllocator->Reset() failed!");
+    //-------------------------------------------------------------
+    // Create fence
+    //-------------------------------------------------------------
+    ECHECK(createFence(), "Cannot create D3D12 fence!");
 
-    // However, when ExecuteCommandList() is called on a particular command 
-    // list, that command list can then be reset at any time and must be before 
-    // re-recording.
-    hr = m_cpCommList->Reset(m_cpCommAllocator.Get(), m_cpPipelineState[0].Get());
-    if (FAILED(hr))
-        throw("CommandList->Reset() failed!");
+    // Close and execute command list
+    ECHECKHR(m_cpCommList->Close(), "Cannot close D3D12 Command list!");
+    PopulateCommandList();
+    
+    // Execute the command list.
+    ID3D12CommandList* ppCommandLists[] = { m_cpCommList.Get() };
+    m_cpCommQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+    // Present the frame.
+    ECHECKHR(m_cpSwapChain->Present(1, 0),
+        "SwapChain->Present() failed!");
+    WaitForPreviousFrame();
 
 	return true;
 }
@@ -146,7 +161,7 @@ UINT gGraphicsDX12::createDebugLayerIfNeeded()
     return 0;
 }
 
-bool gGraphicsDX12::createCommandQueues()
+bool gGraphicsDX12::createCommandQueue()
 {
     if (FAILED(m_cpD3DDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cpCommAllocator))))
         return false;
@@ -268,7 +283,7 @@ bool gGraphicsDX12::createDepthStensil()
     return true;
 }
 
-bool gGraphicsDX12::createFrameResource()
+bool gGraphicsDX12::createFrameResources()
 {
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_cpRTVHeap->GetCPUDescriptorHandleForHeapStart());
     
@@ -470,6 +485,100 @@ bool gGraphicsDX12::createDefaultPipelineState()
 
     return true;
 }
+
+bool gGraphicsDX12::createCommandLists()
+{
+    return (SUCCEEDED(m_cpD3DDev->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
+        m_cpCommAllocator.Get(), m_cpPipelineState[0].Get(), IID_PPV_ARGS(&m_cpCommList))));
+}
+
+bool gGraphicsDX12::createFence()
+{
+    if (FAILED(m_cpD3DDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_cpFence))))
+        return false;
+        
+    m_fenceValue = 1;
+
+    // Create an event handle to use for frame synchronization.
+    m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (m_fenceEvent == nullptr)
+    {
+        if (FAILED(HRESULT_FROM_WIN32(GetLastError())))
+            return false;
+    }
+    return true;
+}
+
+void gGraphicsDX12::WaitForPreviousFrame()
+{
+    // WAITING FOR THE FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.
+    // This is code implemented as such for simplicity. More advanced samples 
+    // illustrate how to use fences for efficient resource usage.
+
+    // Signal and increment the fence value.
+    const UINT64 fence = m_fenceValue;
+    m_cpCommQueue->Signal(m_cpFence.Get(), fence);
+    m_fenceValue++;
+
+    // Wait until the previous frame is finished.
+    if (m_cpFence->GetCompletedValue() < fence)
+    {
+        ECHECKHR(m_cpFence->SetEventOnCompletion(fence, m_fenceEvent),
+            "D3D12 Fence->SetEventOnCompletion() failed!");
+        WaitForSingleObject(m_fenceEvent, INFINITE);
+    }
+
+    m_frameIndex = m_cpSwapChain->GetCurrentBackBufferIndex();
+}
+
+void gGraphicsDX12::PopulateCommandList()
+{
+    // Command list allocators can only be reset when the associated 
+    // command lists have finished execution on the GPU; apps should use 
+    // fences to determine GPU execution progress.
+    ECHECKHR(m_cpCommAllocator->Reset(), 
+        "D3D12 CommandAllocator->Reset() failed!");
+
+    // However, when ExecuteCommandList() is called on a particular command 
+    // list, that command list can then be reset at any time and must be before 
+    // re-recording.
+    ECHECKHR(m_cpCommList->Reset(m_cpCommAllocator.Get(), m_cpPipelineState[0].Get()),
+        "D3D12 CommandList->Reset() failed!");
+
+    // Set necessary state.
+    m_cpCommList->SetGraphicsRootSignature(m_cpRootSignature[0].Get());
+
+    ID3D12DescriptorHeap* ppHeaps[] = { m_cpSRVHeap.Get() };
+    m_cpCommList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+    CD3DX12_GPU_DESCRIPTOR_HANDLE h(m_cpSRVHeap->GetGPUDescriptorHandleForHeapStart());
+
+    m_cpCommList->RSSetViewports(1, &m_viewport);
+    m_cpCommList->RSSetScissorRects(1, &m_scissorRect);
+
+    // Indicate that the back buffer will be used as a render target.
+    auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_cpRenderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    m_cpCommList->ResourceBarrier(1, &barrier);
+
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_cpRTVHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
+    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_cpDSVHeap->GetCPUDescriptorHandleForHeapStart());
+
+    m_cpCommList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+    // Record commands.
+    const float clearColor[] = { 0.0f, 0.4f, 0.2f, 1.0f };
+    m_cpCommList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+    m_cpCommList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, 0);
+
+    // Indicate that the back buffer will now be used to present.
+    barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_cpRenderTargets[m_frameIndex].Get(), 
+        D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+    m_cpCommList->ResourceBarrier(1, &barrier);
+
+    ECHECKHR(m_cpCommList->Close(),
+        "D3D12 CommandList->Close() failed!");
+}
+
 
 bool gGraphicsDX12::finalize()
 {
