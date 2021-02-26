@@ -38,9 +38,9 @@ void gGraphicsDX12::gRenderQueueDX12::execute()
 
 gGraphicsDX12::gGraphicsDX12(SPPLATFORM platform, SPCONFIGURATION configuration) :
     m_useWARPDevice( false ), 
-    m_rtvDescriptorSize(0),
-    m_dsvDescriptorSize(0),
-    m_srvDescriptorSize(0)
+    m_rtvDescriptorSize(NULL),
+    m_dsvDescriptorSize(NULL),
+    m_srvDescriptorSize(NULL)
 {
     auto wParams = platform->getWindow()->getWindowParameters();
 
@@ -53,7 +53,8 @@ gGraphicsDX12::gGraphicsDX12(SPPLATFORM platform, SPCONFIGURATION configuration)
     m_scissorRect.bottom = wParams.width;
     m_scissorRect.right = wParams.height;
 
-    m_wHandle = static_cast<HWND>(platform->getWindow()->getWindowHanlde());
+    m_wpPlatform = platform;
+    m_wpConfiguration = configuration;
 }
 
 gGraphicsDX12::~gGraphicsDX12()
@@ -64,7 +65,11 @@ gGraphicsDX12::~gGraphicsDX12()
 
 bool gGraphicsDX12::initialize()
 {
-    
+    //-------------------------------------------------------------
+    // Check first window in platform system is initialized
+    //-------------------------------------------------------------
+    ECHECK(!m_wpPlatform.expired(), "Initialize platform before graphics!");
+
     //-------------------------------------------------------------
     // Use debug layer if needeed
     //-------------------------------------------------------------
@@ -97,8 +102,27 @@ bool gGraphicsDX12::initialize()
     //-------------------------------------------------------------
     // Create descriptor heaps
     //-------------------------------------------------------------
-    ECHECK(createDescriptorHeaps(), "Cannot create descriptor heaps!");
+    ECHECK(createDescriptorHeaps(), "Cannot create D3D12 descriptor heaps!");
     
+    //-------------------------------------------------------------
+    // Create default assets
+    //-------------------------------------------------------------
+    ECHECK(createDefaultRootSignature(), "Cannot create D3D12 default root signature!");
+    ECHECK(createDefaultPipelineState(), "Cannot create D3D12 default pipline state!");
+
+
+    //Test clear target
+    HRESULT hr = m_cpCommAllocator->Reset();
+    if (FAILED(hr))
+        throw("CommandAllocator->Reset() failed!");
+
+    // However, when ExecuteCommandList() is called on a particular command 
+    // list, that command list can then be reset at any time and must be before 
+    // re-recording.
+    hr = m_cpCommList->Reset(m_cpCommAllocator.Get(), m_cpPipelineState[0].Get());
+    if (FAILED(hr))
+        throw("CommandList->Reset() failed!");
+
 	return true;
 }
 
@@ -124,11 +148,14 @@ UINT gGraphicsDX12::createDebugLayerIfNeeded()
 
 bool gGraphicsDX12::createCommandQueues()
 {
+    if (FAILED(m_cpD3DDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cpCommAllocator))))
+        return false;
+
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-    return FAILED( m_cpD3DDev->CreateCommandQueue( &queueDesc, IID_PPV_ARGS(&m_cpCommQueue) ) );
+    return SUCCEEDED( m_cpD3DDev->CreateCommandQueue( &queueDesc, IID_PPV_ARGS(&m_cpCommQueue) ) );
 }
 
 bool gGraphicsDX12::createDevice(ComPtr<IDXGIFactory4> factory)
@@ -158,6 +185,19 @@ bool gGraphicsDX12::createDevice(ComPtr<IDXGIFactory4> factory)
 
 bool gGraphicsDX12::createSwapChain(ComPtr<IDXGIFactory4> factory)
 {
+    // Get window parameters
+    auto wParams = m_wpPlatform.lock()->getWindow()->getWindowParameters();
+    HWND hWnd = static_cast<HWND>(wParams.handle);
+
+    m_renderQueue = IGraphics::SPRENDERQUEUE(new gRenderQueueDX12(this));
+    m_viewport.TopLeftX = m_viewport.TopLeftY = 0;
+    m_viewport.Width = wParams.width;
+    m_viewport.Height = wParams.height;
+
+    m_scissorRect.left = m_scissorRect.top = 0;
+    m_scissorRect.bottom = wParams.width;
+    m_scissorRect.right = wParams.height;
+
     ComPtr<IDXGISwapChain> swapChain;
     DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
     swapChainDesc.BufferCount = MAXFRAMESNUM;
@@ -166,7 +206,7 @@ bool gGraphicsDX12::createSwapChain(ComPtr<IDXGIFactory4> factory)
     swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapChainDesc.OutputWindow = m_wHandle;
+    swapChainDesc.OutputWindow = hWnd;
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.Windowed = TRUE;
     
@@ -174,7 +214,7 @@ bool gGraphicsDX12::createSwapChain(ComPtr<IDXGIFactory4> factory)
         return false;
 
     // This realization does not support fullscreen transitions.
-    if (FAILED(factory->MakeWindowAssociation(m_wHandle, DXGI_MWA_NO_ALT_ENTER)))
+    if (FAILED(factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER)))
         return false;
 
     swapChain.As(&m_cpSwapChain);
@@ -274,6 +314,160 @@ bool gGraphicsDX12::createFrameResource()
         m_cpD3DDev->CreateDepthStencilView(m_cpDepthStencil.Get(), 
             &depthStencilDesc, m_cpDSVHeap->GetCPUDescriptorHandleForHeapStart());
     }
+    return true;
+}
+
+
+bool gGraphicsDX12::createDefaultRootSignature()
+{
+    D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+
+    // This is the highest version the sample supports. If CheckFeatureSupport succeeds, 
+    // the HighestVersion returned will not be greater than this.
+    featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+    if (FAILED(m_cpD3DDev->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+        featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+    //printf("WARNING: force use ROOT_SIGNATURE_VERSION_1_0!\n");
+    
+
+    CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+    /*
+    ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    ranges[0].NumDescriptors = 1;
+    ranges[0].BaseShaderRegister = 0;
+    ranges[0].RegisterSpace = 0;
+    ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+    ranges[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
+    */
+
+    CD3DX12_ROOT_PARAMETER1 rootParameters[2];
+    rootParameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
+
+    D3D12_STATIC_SAMPLER_DESC sampler[1] = {};
+    sampler[0].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+    sampler[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    sampler[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    sampler[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    sampler[0].MipLODBias = 0;
+    sampler[0].MaxAnisotropy = 0;
+    sampler[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    sampler[0].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+    sampler[0].MinLOD = 0.0f;
+    sampler[0].MaxLOD = D3D12_FLOAT32_MAX;
+    sampler[0].ShaderRegister = 0;
+    sampler[0].RegisterSpace = 0;
+    sampler[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+    CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+    rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+    ComPtr<ID3DBlob> signature;
+    ComPtr<ID3DBlob> error;
+    if (FAILED(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error)))
+        return false;
+    //ECHECKHR(hr, "Cannot serialize versioned root signature!");
+
+    if (FAILED(m_cpD3DDev->CreateRootSignature(0, signature->GetBufferPointer(),
+        signature->GetBufferSize(), IID_PPV_ARGS(&m_cpRootSignature[0]))))
+        return false;
+    //ECHECKHR(hr, "Cannot create root signature!");
+    
+    return true;
+}
+
+bool gGraphicsDX12::createDefaultPipelineState()
+{
+    ComPtr<ID3DBlob> vertexShader;
+    ComPtr<ID3DBlob> pixelShader;
+
+#if defined(_DEBUG)
+    // Enable better shader debugging with the graphics debugging tools.
+    UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+    UINT compileFlags = 0;
+#endif
+
+    const char vs_source[] =
+        "struct VS_INPUT                    "
+        "{                                   "
+        "    float4 pos : POSITION;          "
+        "    float2 texCoord : TEXCOORD;     "
+        "    float4 color : COLOR;          "
+        "};   "
+
+        "struct VS_OUTPUT                       "
+        "{                                      "
+        "   float4 pos : SV_POSITION;           "
+        "    float2 texCoord : TEXCOORD;        "
+        "    float4 color : COLOR;              "
+        "};                                     "
+
+
+        "VS_OUTPUT main(VS_INPUT input)         "
+        "{                                      "
+        "   VS_OUTPUT output;                   "
+        "   output.pos = input.pos;             "
+        "   output.texCoord = input.texCoord;  "
+        "   output.color = input.color;        "
+        "   return output;                     "
+        "}";
+
+    const char ps_source[] =
+        "struct PSInput                         "
+        "{                                      "
+        "    float4 position : SV_POSITION;     "
+        "    float2 uv : TEXCOORD;              "
+        "    float4 color : COLOR;              "
+        "};                                     "
+
+        "Texture2D g_texture : register(t0);       "
+        "SamplerState g_sampler : register(s0);     "
+
+        "float4 main(PSInput input) : SV_TARGET     "
+        "{                                          "
+        "    return g_texture.Sample(g_sampler, input.uv); "
+        "} ";
+   
+    
+    ID3DBlob* errorBlob;
+
+    if( FAILED( D3DCompile( vs_source, sizeof(vs_source), "vs_default", nullptr, 
+                nullptr, "main", "vs_5_0", compileFlags, 0, &vertexShader, &errorBlob)))
+        return false;
+
+    if (FAILED(D3DCompile(ps_source, sizeof(ps_source), "ps_default", nullptr,
+        nullptr, "main", "ps_5_0", compileFlags, 0, &pixelShader, &errorBlob)))
+        return false;
+
+    // Define the vertex input layout.
+    D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+    };
+
+    // Describe and create the graphics pipeline state object (PSO).
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+    psoDesc.pRootSignature = m_cpRootSignature[0].Get();
+    psoDesc.VS = { reinterpret_cast<UINT8*>(vertexShader->GetBufferPointer()), vertexShader->GetBufferSize() };
+    psoDesc.PS = { reinterpret_cast<UINT8*>(pixelShader->GetBufferPointer()), pixelShader->GetBufferSize() };
+    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    psoDesc.SampleMask = UINT_MAX;
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.SampleDesc.Count = 1;
+
+    if (FAILED(m_cpD3DDev->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_cpPipelineState[0]))))
+        return false;
+
     return true;
 }
 

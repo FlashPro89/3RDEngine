@@ -137,13 +137,13 @@ public:
 			unsigned short x;
 			unsigned short y;
 			bool fullscreen;
+			void* handle;
 		};
 
 		IWindow(const gWINDOWPARAMS& parameters) {};
 		~IWindow() {};
 
 		// window
-		virtual void* getWindowHanlde() = 0;
 		virtual void showWindow(bool show) = 0;
 		virtual void setWindowParameters(const gWINDOWPARAMS& parameters) = 0;
 		virtual const gWINDOWPARAMS& getWindowParameters() const = 0;
@@ -334,6 +334,18 @@ typedef std::shared_ptr<IUserInterface> SPUSERINTERFACE;
 typedef std::shared_ptr<IScripts> SPSCRIPTS;
 typedef std::shared_ptr<ILogger> SPLOGGER;
 typedef std::shared_ptr<IConfiguration> SPCONFIGURATION;
+
+typedef std::weak_ptr<IPlatform> WPPLATFORM;
+typedef std::weak_ptr<IResources> WPRESOURCES;
+typedef std::weak_ptr<IInput> WPINPUT;
+typedef std::weak_ptr<IGraphics> WPGRAPHICS;
+typedef std::weak_ptr<ISounds> WPSOUNDS;
+typedef std::weak_ptr<IPhysics> WPPHYSICS;
+typedef std::weak_ptr<ISceneGraph> WPSCENEGRAPH;
+typedef std::weak_ptr<IUserInterface> WPUSERINTERFACE;
+typedef std::weak_ptr<IScripts> WPSCRIPTS;
+typedef std::weak_ptr<ILogger> WPLOGGER;
+typedef std::weak_ptr<IConfiguration> WPCONFIGURATION;
 
 
 #endif

@@ -21,10 +21,9 @@ public:
 		~gWindow();
 
 		// window
-		void* getWindowHanlde(); // return hWnd casted to pointer
 		void showWindow(bool show);
 		void setWindowParameters(const gWINDOWPARAMS& parameters);
-		const gWINDOWPARAMS& getWindowParameters() const;
+		const gWINDOWPARAMS& getWindowParameters() const; // hWnd casted to pointer
 		bool updateWindow();
 
 	protected:
@@ -34,7 +33,6 @@ public:
 		void adjustRect(void* rect);
 
 		gWINDOWPARAMS m_parameters;
-		void* m_wHandle;
 
 		friend 	bool gPlatformWin::initialize();
 	};

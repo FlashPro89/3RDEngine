@@ -34,7 +34,7 @@ typedef std::weak_ptr<gGraphicsDX12> WPGRAPHICSDX12;
 //пока такой костыль =)
 extern lpfnThrowException fnThrowException; //for exception export to engine
 #define ETHROW(msg) fnThrowException( __FUNCSIG__, __FILE__, __LINE__, (msg) )
-#define ECHECK(e,msg) if(e)fnThrowException( __FUNCSIG__, __FILE__, __LINE__, (msg) )
+#define ECHECK(e,msg) if(!e)fnThrowException( __FUNCSIG__, __FILE__, __LINE__, (msg) )
 #define ECHECKHR(hr,msg) if(FAILED(hr))fnThrowException( __FUNCSIG__, __FILE__, __LINE__, (msg) )
 
 class gGraphicsDX12 : public IGraphics
@@ -74,8 +74,13 @@ protected:
 	bool createDescriptorHeaps();
 	bool createDepthStensil();
 	bool createFrameResource();
+	bool createDefaultRootSignature();
+	bool createDefaultPipelineState();
 	bool finalize();
 	SPRENDERQUEUE m_renderQueue;
+	WPPLATFORM m_wpPlatform;
+	WPCONFIGURATION m_wpConfiguration;
+
 
 	//settings
 	bool m_useWARPDevice; //default : false
@@ -112,7 +117,6 @@ protected:
 	// Rendering region
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;
-	HWND m_wHandle;
 
 	// Descriptor heaps
 	size_t m_rtvDescriptorSize;

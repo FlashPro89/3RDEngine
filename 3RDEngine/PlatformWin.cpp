@@ -19,25 +19,19 @@
 gPlatformWin::gWindow::gWindow()
 {
 	m_parameters;
-	m_wHandle = 0;
 }
 
 gPlatformWin::gWindow::~gWindow()
 {
-	if (m_wHandle)
-		DestroyWindow((HWND)m_wHandle);
+	if (m_parameters.handle)
+		DestroyWindow((HWND)m_parameters.handle);
 	UnregisterClass("3RDE_WND_CLS", GetModuleHandle(0));
 }
 
 // window
-void* gPlatformWin::gWindow::getWindowHanlde() 
-{
-	return m_wHandle;
-}
-
 void gPlatformWin::gWindow::showWindow(bool show)
 {
-	ShowWindow( (HWND)m_wHandle, show ?  SW_SHOW : SW_HIDE);
+	ShowWindow( (HWND)m_parameters.handle, show ?  SW_SHOW : SW_HIDE);
 	updateWindow();
 }
 
@@ -47,7 +41,7 @@ void gPlatformWin::gWindow::setWindowParameters( const gWINDOWPARAMS& parameters
 	RECT rect;
 	adjustRect(&rect);
 
-	HWND hWnd = static_cast<HWND>(m_wHandle);
+	HWND hWnd = static_cast<HWND>(m_parameters.handle);
 
 	if ( !parameters.fullscreen )
 	{
@@ -68,7 +62,7 @@ const gPlatformWin::IWindow::gWINDOWPARAMS& gPlatformWin::gWindow::getWindowPara
 
 bool gPlatformWin::gWindow::updateWindow()
 {
-	return UpdateWindow( static_cast<HWND>(m_wHandle) );
+	return UpdateWindow( static_cast<HWND>(m_parameters.handle) );
 }
 
 #ifdef _WIN64 
@@ -113,7 +107,7 @@ bool gPlatformWin::gWindow::createWindow( const gWINDOWPARAMS& parameters )
 
 	ECHECK( hWnd, "Ошибка при создании окна!" );
 
-	m_wHandle = static_cast<void*>(hWnd);
+	m_parameters.handle = static_cast<void*>(hWnd);
 
 	return true;
 }
