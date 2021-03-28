@@ -13,7 +13,7 @@
 
 GDX9_API_C IGraphics* createGraphicsDX9(SPPLATFORM platform, SPCONFIGURATION configuration);
 GDX9_API_C void destroyGraphicsDX9(IGraphics*);
-GDX9_API_C int simple();
+GDX9_API_C void setThrowExceptionFunction(void* fn);
 
 
 #endif

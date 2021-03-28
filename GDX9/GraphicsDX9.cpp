@@ -2,6 +2,8 @@
 #include <Windows.h>
 #include "GraphicsDX9.h"
 
+extern lpfnThrowException fnThrowException = 0;
+
 // ------------------------------------
 //
 //		*** class gGraphicsDX9::gRenderQueueDX9 ***
@@ -34,12 +36,11 @@ void gGraphicsDX9::gRenderQueueDX9::execute()
 //
 // ------------------------------------
 
-gGraphicsDX9::gGraphicsDX9(SPPLATFORM platform, SPCONFIGURATION configuration) :
-	m_lpD3D9( NULL),
-	m_lpDev( NULL)
+gGraphicsDX9::gGraphicsDX9(SPPLATFORM platform, SPCONFIGURATION configuration)
 {
 	m_renderQueue = IGraphics::SPRENDERQUEUE(new gRenderQueueDX9(this));
-
+    m_wpPlatform = platform;
+    m_wpConfiguration = configuration;
 }
 
 gGraphicsDX9::~gGraphicsDX9()
@@ -50,7 +51,50 @@ gGraphicsDX9::~gGraphicsDX9()
 
 bool gGraphicsDX9::initialize()
 {
-	return true;
+    //-------------------------------------------------------------
+    // Check first window in platform system is initialized
+    //-------------------------------------------------------------
+    ECHECK(!m_wpPlatform.expired(), "Initialize platform before graphics!");
+
+    //-------------------------------------------------------------
+    // Create D3D9 Main Object
+    //-------------------------------------------------------------
+    m_cpD3D9 = Direct3DCreate9(D3D_SDK_VERSION);    // create the Direct3D interface
+    if (m_cpD3D9 == nullptr)
+        return false;
+
+    //-------------------------------------------------------------
+    // Create Device
+    //-------------------------------------------------------------
+    D3DPRESENT_PARAMETERS d3dpp;    // create a struct to hold various device information
+    HWND hWnd = static_cast<HWND>( m_wpPlatform.lock()->getWindow()->getWindowParameters().handle );
+    LPDIRECT3DDEVICE9 lpDevice = nullptr;
+
+    ZeroMemory(&d3dpp, sizeof(d3dpp));    // clear out the struct for use
+    d3dpp.Windowed = TRUE;    // program windowed, not fullscreen
+    d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;    // discard old frames
+    d3dpp.hDeviceWindow = hWnd;    // set the window to be used by Direct3D
+    d3dpp.AutoDepthStencilFormat = D3DFMT_D24X8;
+
+    // create a device class using this information and information from the d3dpp stuct
+    HRESULT hr = m_cpD3D9->CreateDevice( D3DADAPTER_DEFAULT,
+        D3DDEVTYPE_HAL,
+        hWnd,
+        D3DCREATE_HARDWARE_VERTEXPROCESSING,
+        &d3dpp,
+        &lpDevice);
+
+    if (FAILED(hr))
+        return false;
+
+    m_cpD3DDev = lpDevice;
+    hr = m_cpD3DDev->Clear(0, NULL, D3DCLEAR_TARGET, 0x7F7F7F7F, 1.0f, 0);
+    hr = m_cpD3DDev->BeginScene();
+    hr = m_cpD3DDev->EndScene();
+    hr = m_cpD3DDev->Present(0, 0, 0, 0);
+
+
+    return true;
 }
 
 IGraphics::SPRENDERQUEUE gGraphicsDX9::getRenderQueue()
@@ -60,10 +104,6 @@ IGraphics::SPRENDERQUEUE gGraphicsDX9::getRenderQueue()
 
 bool gGraphicsDX9::finalize()
 {
-	if (m_lpDev)
-		m_lpDev->Release();
-	if (m_lpD3D9)
-		m_lpD3D9->Release();
 	return true;
 }
 
