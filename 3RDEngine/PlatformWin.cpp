@@ -253,7 +253,7 @@ bool gPlatformWin::initialize()
 	return true;
 }
 
-bool gPlatformWin::runMainLoop()
+bool gPlatformWin::runMainLoop( bool* renderEnded, bool* renderRunned )
 {
 	MSG msg = { 0 };
 	while (true)
@@ -262,15 +262,15 @@ bool gPlatformWin::runMainLoop()
 		{
 			if (msg.message == WM_QUIT)
 			{
-				//cleanUp();
-				return true;
+				*renderRunned = false;
+				while ( *renderEnded != true) //wait while render ended
+					Sleep(100);
+				return 0;
 			};
 
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		//if (frame_move())
-		//	frame_render();
 	}
 }
 

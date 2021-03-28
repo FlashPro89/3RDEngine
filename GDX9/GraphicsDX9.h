@@ -23,6 +23,8 @@ extern lpfnThrowException fnThrowException; //for exception export to engine
 
 class gGraphicsDX9 : public IGraphics
 {
+protected:
+	ComPtr<IDirect3DDevice9> getDevice();
 public:
 
 	class gRenderQueueDX9 : public IRenderQueue
@@ -38,6 +40,7 @@ public:
 		gRenderQueueDX9() {}
 		gRenderQueueDX9(const gRenderQueueDX9&) {}
 		gGraphicsDX9* m_pGraphics;
+		friend ComPtr<IDirect3DDevice9> gGraphicsDX9::getDevice();
 	};
 
 
@@ -49,6 +52,7 @@ public:
 
 protected:
 	bool finalize();
+	
 	SPRENDERQUEUE m_renderQueue;
 	WPPLATFORM m_wpPlatform;
 	WPCONFIGURATION m_wpConfiguration;

@@ -73,6 +73,7 @@ public:
 
 protected:
 	bool finalize();
+	void runRenderingThread( bool* renderEnded, bool* renderRunned );
 
 	gString m_applicationName;
 	eRENDERAPI m_gapi;

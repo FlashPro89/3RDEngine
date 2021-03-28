@@ -27,7 +27,14 @@ void gGraphicsDX9::gRenderQueueDX9::add(gRenderElement re)
 
 void gGraphicsDX9::gRenderQueueDX9::execute()
 {
-	MessageBox(0, "Test from dynamic lib", "Boooo", MB_OK);
+	//MessageBox(0, "Test from dynamic lib", "Boooo", MB_OK);
+
+    auto cpDevice = this->m_pGraphics->getDevice();
+    HRESULT hr;
+    hr = cpDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0x7F7F7F7F, 1.0f, 0);
+    hr = cpDevice->BeginScene();
+    hr = cpDevice->EndScene();
+    hr = cpDevice->Present(0, 0, 0, 0);
 }
 
 // ------------------------------------
@@ -47,6 +54,11 @@ gGraphicsDX9::~gGraphicsDX9()
 {
 	MessageBox(0, "gGraphicsDX9", "Destructor called!", MB_OK);
 	finalize();
+}
+
+ComPtr<IDirect3DDevice9> gGraphicsDX9::getDevice()
+{
+    return m_cpD3DDev;
 }
 
 bool gGraphicsDX9::initialize()
@@ -75,6 +87,7 @@ bool gGraphicsDX9::initialize()
     d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;    // discard old frames
     d3dpp.hDeviceWindow = hWnd;    // set the window to be used by Direct3D
     d3dpp.AutoDepthStencilFormat = D3DFMT_D24X8;
+    d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 
     // create a device class using this information and information from the d3dpp stuct
     HRESULT hr = m_cpD3D9->CreateDevice( D3DADAPTER_DEFAULT,
@@ -88,12 +101,6 @@ bool gGraphicsDX9::initialize()
         return false;
 
     m_cpD3DDev = lpDevice;
-    hr = m_cpD3DDev->Clear(0, NULL, D3DCLEAR_TARGET, 0x7F7F7F7F, 1.0f, 0);
-    hr = m_cpD3DDev->BeginScene();
-    hr = m_cpD3DDev->EndScene();
-    hr = m_cpD3DDev->Present(0, 0, 0, 0);
-
-
     return true;
 }
 

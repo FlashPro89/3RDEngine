@@ -72,7 +72,7 @@ public:
 
 	IPlatform::ePLATFORMTYPE getPlatformType() const;
 
-	bool runMainLoop();
+	bool runMainLoop( bool* renderEnded, bool* renderRunned );
 
 protected:
 	gPlatformWin( const gPlatformWin& other ) {};

@@ -31,18 +31,18 @@ public:
 	size_t write( void* src, size_t size );
 
 	bool gets( gString& str ) const;
-	bool gets( char* dst, size_t buffsz ) const;
+	bool gets( char* dst, int buffsz ) const;
 	bool puts( const gString& str );
 	bool puts( const char* src );
 
-	size_t print(const char* fmt, ...);
-	size_t print(const gString& fmt, ...);
-	size_t scan(char* fmt, ...) const;
-	size_t scan(gString& fmt, ...) const;
+	int print(const char* fmt, ...);
+	int print(const gString& fmt, ...);
+	int scan(char* fmt, ...) const;
+	int scan(gString& fmt, ...) const;
 
 	//for logger
-	size_t printVA(const char* fmt, va_list args);
-	size_t scanVA(char* fmt, va_list args) const;
+	int printVA(const char* fmt, va_list args);
+	int scanVA(char* fmt, va_list args) const;
 
 	char getc(bool nostep = true) const;
 	bool putc(char c);

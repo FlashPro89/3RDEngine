@@ -39,6 +39,11 @@ extern lpfnThrowException fnThrowException; //for exception export to engine
 
 class gGraphicsDX12 : public IGraphics
 {
+protected:
+	ComPtr< ID3D12GraphicsCommandList >  getCommandList();
+	ComPtr< ID3D12CommandAllocator > getCommandAllocator();
+	ComPtr< ID3D12PipelineState > getPipelineState();
+
 public:
 
 	class gRenderQueueDX12 : public IRenderQueue
@@ -54,8 +59,11 @@ public:
 		gRenderQueueDX12() {}
 		gRenderQueueDX12(const gRenderQueueDX12&) {}
 		gGraphicsDX12* m_pGraphics;
-	};
 
+		friend ComPtr< ID3D12GraphicsCommandList >  gGraphicsDX12::getCommandList();
+		friend ComPtr< ID3D12CommandAllocator > gGraphicsDX12::getCommandAllocator();
+		friend ComPtr< ID3D12PipelineState > gGraphicsDX12::getPipelineState();
+	};
 
 	gGraphicsDX12(SPPLATFORM platform, SPCONFIGURATION configuration);
 	~gGraphicsDX12();

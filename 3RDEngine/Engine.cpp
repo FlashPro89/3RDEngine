@@ -1,7 +1,8 @@
 #include <assert.h>
+#include <vadefs.h>
+#include <thread>
 #include "Engine.h"
 #include "PlatformWin.h"
-#include <vadefs.h>
 #include "Configuration.h"
 #include "Logger.h"
 
@@ -132,12 +133,14 @@ template < class I, typename ... InterfaceCreationArgs >
 void gPlugin<I, InterfaceCreationArgs...>
 ::finalize()
 {
+#ifdef _WIN32
 	if (m_dlHandle)
 	{
 		ECHECK(FreeLibrary((HMODULE)m_dlHandle), gString("Failed to unload ") + m_libFileName);
 		FreeLibrary((HMODULE)m_dlHandle);;
 		m_dlHandle = NULL;
 	}
+#endif
 	m_lpfnCreate = NULL;
 	m_lpfnDestroy = NULL;
 }
@@ -229,20 +232,16 @@ bool g3RDEngine::initialize(const char* config, bool useAsConfigBuffer)
 #endif
 		m_spGraphics = m_graphicsPlugin.createInterface(m_spPlatform, m_spConfiguration);
 		ECHECK(m_spGraphics, "Failed load graphics plugin");
-		m_spGraphics->getRenderQueue()->execute();
 
 		// Try to init systems ( first init config for all systems )
 		ECHECK(m_spLogger->initialize(), "Failed logger initialization!");
 		ECHECK(m_spConfiguration->initialize(), "Failed load configuration file!");
 		ECHECK(m_spPlatform->initialize(), "Failed platform system initialization!");
+		ECHECK(m_spGraphics->initialize(), "Failed graphics system initialization!");
+		ELOGMSG("3RD Engine systems initialized successfull!");
 
 		// Show window 
 		m_spPlatform->getWindow()->showWindow(true);
-		ECHECK(m_spGraphics->initialize(), "Failed graphics system initialization!");
-
-		ELOGMSG("3RD Engine systems initialized successfull!");
-
-
 
 		//m_spLogger->logMessage("Message");
 		//m_spLogger->logWarning("Warning");
@@ -264,7 +263,13 @@ int g3RDEngine::run()
 	if (m_spPlatform.get() == 0) 
 		return false;
 
-	bool runResult = m_spPlatform->runMainLoop();
+	bool renderEnded;
+	bool run;
+
+	runRenderingThread( &renderEnded, &run );
+
+	bool runResult = m_spPlatform->runMainLoop( &renderEnded, &run );
+
 	finalize(); // ???
 	return runResult ? 0 : -1;
 }
@@ -285,6 +290,35 @@ bool g3RDEngine::finalize()
 	
 	return true;
 }
+
+void g3RDEngine::runRenderingThread( bool* renderEnded, bool* renderRunned )
+{
+	// run rendering loop
+	//bool run = false;
+	//bool renderEnded = false;
+	*renderRunned = false;
+	*renderEnded = false;
+
+	auto renderQueue = m_spGraphics->getRenderQueue();
+
+	auto renderingLoop
+	{
+		[=]()
+		{
+			while (*renderRunned != false)
+			{
+				renderQueue->execute();
+				//Sleep(1);
+			}
+			*renderEnded = true;
+		}
+	};
+	*renderRunned = true;
+	std::thread renderThread(renderingLoop);
+
+	renderThread.detach();
+}
+
 
 //objects getters
 SPPLATFORM g3RDEngine::getPlatform()

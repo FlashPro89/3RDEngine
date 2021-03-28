@@ -28,7 +28,17 @@ void gGraphicsDX12::gRenderQueueDX12::add(gRenderElement re)
 
 void gGraphicsDX12::gRenderQueueDX12::execute()
 {
-	MessageBox(0, "Test from dynamic lib", "Boooo", MB_OK);
+	//MessageBox(0, "Test from dynamic lib", "Boooo", MB_OK);
+
+    auto cpCommAllocator = this->m_pGraphics->getCommandAllocator();
+    auto cpCommList = this->m_pGraphics->getCommandList();
+    auto cpPipelineState = this->m_pGraphics->getPipelineState();
+
+    if (FAILED(cpCommAllocator->Reset()))
+        return;
+
+    if (FAILED(cpCommList->Reset(cpCommAllocator.Get(), cpPipelineState.Get())))
+        return;
 }
 
 // ------------------------------------
@@ -62,6 +72,21 @@ gGraphicsDX12::~gGraphicsDX12()
 {
 	MessageBox(0, "gGraphicsDX12", "Destructor called!", MB_OK);
 	finalize();
+}
+
+ComPtr< ID3D12GraphicsCommandList >  gGraphicsDX12::getCommandList()
+{
+    return m_cpCommList;
+}
+
+ComPtr< ID3D12CommandAllocator > gGraphicsDX12::getCommandAllocator()
+{
+    return m_cpCommAllocator;
+}
+
+ComPtr< ID3D12PipelineState > gGraphicsDX12::getPipelineState()
+{
+    return m_cpPipelineState[0];
 }
 
 bool gGraphicsDX12::initialize()

@@ -87,7 +87,7 @@ const gString& gFile::getFileName() const
 
 size_t gFile::getFileSize() const
 {
-	size_t ret, curPos = tell();
+	long ret, curPos = tell();
 	seek( 0, gFileSeek::GFS_END );
 	ret = tell();
 	seek( curPos, gFileSeek::GFS_SET );
@@ -96,7 +96,7 @@ size_t gFile::getFileSize() const
 
 bool gFile::seek( long position, gFileSeek mode ) const
 {
-	int origin;
+	int origin = SEEK_SET;
 	switch (mode)
 	{
 	case gFileSeek::GFS_SET:
@@ -127,10 +127,10 @@ size_t gFile::write( void* src, size_t size )
 
 bool gFile::gets( gString& str ) const
 {
-	return 0 != fgets( &str[0], str.capacity(), m_file );
+	return 0 != fgets( &str[0], static_cast<int>(str.capacity()), m_file );
 }
 
-bool gFile::gets( char* dst, size_t buffsz ) const
+bool gFile::gets( char* dst, int buffsz ) const
 {
 	return 0 != fgets( dst, buffsz, m_file);
 }
@@ -145,7 +145,7 @@ bool gFile::puts(const char* src)
 	return 0 != fputs(src, m_file);
 }
 
-size_t gFile::print( const char* fmt, ... )
+int gFile::print( const char* fmt, ... )
 {
 	int result = 0;
 
@@ -157,7 +157,7 @@ size_t gFile::print( const char* fmt, ... )
 	return result;
 }
 
-size_t gFile::print( const gString& fmt, ...)
+int gFile::print( const gString& fmt, ...)
 {
 	int result = 0;
 
@@ -170,7 +170,7 @@ size_t gFile::print( const gString& fmt, ...)
 	return result;
 }
 
-size_t gFile::scan( char* fmt, ... ) const
+int gFile::scan( char* fmt, ... ) const
 {
 	int result = 0;
 	va_list argList;
@@ -181,7 +181,7 @@ size_t gFile::scan( char* fmt, ... ) const
 	return result;
 }
 
-size_t gFile::scan( gString& fmt, ...) const
+int gFile::scan( gString& fmt, ...) const
 {
 	int result = 0;
 	va_list argList;
@@ -193,13 +193,13 @@ size_t gFile::scan( gString& fmt, ...) const
 	return result;
 }
 
-size_t gFile::printVA(const char* fmt, va_list args)
+int gFile::printVA(const char* fmt, va_list args)
 {
 	return _vfprintf_s_l(m_file, fmt, NULL, args);
 
 }
 
-size_t gFile::scanVA(char* fmt, va_list args) const
+int gFile::scanVA(char* fmt, va_list args) const
 {
 	return _vfscanf_s_l(m_file, fmt, NULL, args);
 }

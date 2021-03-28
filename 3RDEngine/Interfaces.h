@@ -70,15 +70,15 @@ public:
 
 	// text I/O
 	virtual bool gets(gString& gString) const = 0;
-	virtual bool gets(char* dst, size_t buffsz) const = 0;
+	virtual bool gets(char* dst, int buffsz) const = 0;
 	virtual bool puts(const gString& gString) = 0;
 	virtual bool puts(const char* src) = 0;
 
 	// formatted text I/O
-	virtual size_t print( const char* fmt, ... ) = 0;
-	virtual size_t print( const gString& fmt, ...) = 0;
-	virtual size_t scan( char* fmt, ... ) const = 0;
-	virtual size_t scan( gString& fmt, ...) const = 0;
+	virtual int print( const char* fmt, ... ) = 0;
+	virtual int print( const gString& fmt, ...) = 0;
+	virtual int scan( char* fmt, ... ) const = 0;
+	virtual int scan( gString& fmt, ...) const = 0;
 
 	virtual char getc( bool nostep = true ) const = 0;
 	virtual bool putc( char c ) = 0;
@@ -186,7 +186,7 @@ public:
 	virtual IWindow* getWindow() = 0;
 
 	virtual ePLATFORMTYPE getPlatformType() const = 0;
-	virtual bool runMainLoop() = 0;
+	virtual bool runMainLoop( bool* renderEnded, bool* renderRunned ) = 0;
 
 protected:
 	IPlatform() {};
