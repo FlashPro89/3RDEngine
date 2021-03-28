@@ -5,11 +5,21 @@
 #ifdef _WIN32
 
 #include <d3d9.h>
+#include <wrl.h>
 #include "../3RDEngine/Interfaces.h"
+
+using Microsoft::WRL::ComPtr;
+using Microsoft::WRL::WeakRef;
 
 class gGraphicsDX9;
 typedef std::shared_ptr<gGraphicsDX9> SPGRAPHICSDX9;
 typedef std::weak_ptr<gGraphicsDX9> WPGRAPHICSDX9;
+
+//пока такой костыль =)
+extern lpfnThrowException fnThrowException; //for exception export to engine
+#define ETHROW(msg) fnThrowException( __FUNCSIG__, __FILE__, __LINE__, (msg) )
+#define ECHECK(e,msg) if(!e)fnThrowException( __FUNCSIG__, __FILE__, __LINE__, (msg) )
+#define ECHECKHR(hr,msg) if(FAILED(hr))fnThrowException( __FUNCSIG__, __FILE__, __LINE__, (msg) )
 
 class gGraphicsDX9 : public IGraphics
 {
@@ -40,8 +50,11 @@ public:
 protected:
 	bool finalize();
 	SPRENDERQUEUE m_renderQueue;
-	LPDIRECT3D9 m_lpD3D9;
-	LPDIRECT3DDEVICE9 m_lpDev;
+	WPPLATFORM m_wpPlatform;
+	WPCONFIGURATION m_wpConfiguration;
+
+	ComPtr< IDirect3D9 > m_cpD3D9;
+	ComPtr< IDirect3DDevice9 >  m_cpD3DDev;
 };
 
 #endif

@@ -47,9 +47,9 @@ GDX9_API_C void destroyGraphicsDX9(IGraphics* p)
     p = 0;
 }
 
-GDX9_API_C int simple() 
-{ 
-    int g = 10; return g; 
+GDX9_API_C void setThrowExceptionFunction(void* fn)
+{
+    fnThrowException = static_cast<lpfnThrowException>(fn);
 }
 
 #endif
