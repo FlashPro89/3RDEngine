@@ -72,7 +72,6 @@ protected:
 	bool createDevice(ComPtr<IDXGIFactory4> factory);
 	bool createSwapChain(ComPtr<IDXGIFactory4> factory);
 	bool createDescriptorHeaps();
-	bool createDepthStensil();
 	bool createFrameResources();
 	bool createDefaultRootSignature();
 	bool createDefaultPipelineState();
@@ -105,8 +104,8 @@ protected:
 	ComPtr< ID3D12PipelineState >       m_cpPipelineState[MAXPIPELINESTATESNUM];
 	ComPtr< ID3D12Resource >            m_cpRenderTargets[MAXFRAMESNUM];
 	ComPtr< ID3D12Resource >            m_cpDepthStencil;
-	ComPtr< ID3D12Resource >            m_textures[MAXTEXTURESNUM];
-	ComPtr< ID3D12Resource >            m_textureUploads[MAXTEXTURESNUM];
+	ComPtr< ID3D12Resource >            m_cpTextures[MAXTEXTURESNUM];
+	ComPtr< ID3D12Resource >            m_cpTextureUploads[MAXTEXTURESNUM];
 
 	// App resources
 	ComPtr<ID3D12Resource> m_cpVertexBuffers[MAXVERTEXBUFFERSNUM];
@@ -125,9 +124,9 @@ protected:
 	D3D12_RECT m_scissorRect;
 
 	// Descriptor heaps
-	size_t m_rtvDescriptorSize;
-	size_t m_dsvDescriptorSize;
-	size_t m_srvDescriptorSize;
+	UINT m_rtvDescriptorSize;
+	UINT m_dsvDescriptorSize;
+	UINT m_srvDescriptorSize;
 };
 
 #endif

@@ -158,10 +158,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DDSTextureLoader12.cpp" />
     <ClCompile Include="EntryPoint.cpp" />
     <ClCompile Include="GraphicsDX12.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DDSTextureLoader12.h" />
     <ClInclude Include="gdx12.h" />
     <ClInclude Include="GraphicsDX12.h" />
   </ItemGroup>

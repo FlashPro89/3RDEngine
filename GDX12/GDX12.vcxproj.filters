@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="EntryPoint.cpp" />
+    <ClCompile Include="GraphicsDX12.cpp" />
+    <ClCompile Include="DDSTextureLoader12.cpp">
+      <Filter>DDSLoader</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="gdx12.h" />
+    <ClInclude Include="GraphicsDX12.h" />
+    <ClInclude Include="DDSTextureLoader12.h">
+      <Filter>DDSLoader</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="DDSLoader">
+      <UniqueIdentifier>{d912a149-d550-4d83-8d81-90ff8d4eeb12}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

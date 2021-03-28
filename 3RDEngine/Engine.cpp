@@ -87,11 +87,14 @@ bool gPlugin<I, InterfaceCreationArgs...>::gPlugin::initialize()
 	m_dlHandle = LoadLibrary(m_libFileName.c_str());
 	if (!m_dlHandle)
 		return false;
-	m_lpfnCreate = (fnCreate)GetProcAddress((HMODULE)m_dlHandle, m_fnCreateName.c_str());
-	m_lpfnDestroy = (fnDestroy)GetProcAddress((HMODULE)m_dlHandle, m_fnDestroyName.c_str());
+
+	HMODULE handle = static_cast<HMODULE>(m_dlHandle);
+
+	m_lpfnCreate = reinterpret_cast<fnCreate>(GetProcAddress(handle, m_fnCreateName.c_str()));
+	m_lpfnDestroy = reinterpret_cast<fnDestroy>(GetProcAddress(handle, m_fnDestroyName.c_str()));
 
 	typedef void(*fnThrowException)(void*);
-	fnThrowException lpfnThrowException = (fnThrowException)GetProcAddress((HMODULE)m_dlHandle, "setThrowExceptionFunction");
+	fnThrowException lpfnThrowException = reinterpret_cast<fnThrowException>(GetProcAddress(handle, "setThrowExceptionFunction"));
 	if (lpfnThrowException)
 		lpfnThrowException(&throwException);
 #endif

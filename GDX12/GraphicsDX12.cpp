@@ -1,6 +1,7 @@
 #ifdef _WIN32
 #include <Windows.h>
 #include "GraphicsDX12.h"
+#include "DDSTextureLoader12.h"
 
 extern lpfnThrowException fnThrowException = 0;
 
@@ -125,6 +126,16 @@ bool gGraphicsDX12::initialize()
     //-------------------------------------------------------------
     ECHECK(createFence(), "Cannot create D3D12 fence!");
 
+    //Test load dds
+    {
+        ID3D12Resource* cpDDSTex = m_cpTextures[0].Get();
+        std::unique_ptr<uint8_t[]> upDDSData;
+        std::vector<D3D12_SUBRESOURCE_DATA> vSubResources;
+        HRESULT hr = LoadDDSTextureFromFile(m_cpD3DDev.Get(), L"../data/textures/glass_xii_diffuse.dds",
+            &cpDDSTex, upDDSData, vSubResources);
+    }
+
+
     // Close and execute command list
     ECHECKHR(m_cpCommList->Close(), "Cannot close D3D12 Command list!");
     PopulateCommandList();
@@ -163,9 +174,6 @@ UINT gGraphicsDX12::createDebugLayerIfNeeded()
 
 bool gGraphicsDX12::createCommandQueue()
 {
-    if (FAILED(m_cpD3DDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cpCommAllocator))))
-        return false;
-
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -275,11 +283,6 @@ bool gGraphicsDX12::createDescriptorHeaps()
         return false;
     m_srvDescriptorSize = m_cpD3DDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-    return true;
-}
-
-bool gGraphicsDX12::createDepthStensil()
-{
     return true;
 }
 
@@ -474,6 +477,7 @@ bool gGraphicsDX12::createDefaultPipelineState()
     psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
     psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     psoDesc.SampleMask = UINT_MAX;
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     psoDesc.NumRenderTargets = 1;
@@ -488,6 +492,9 @@ bool gGraphicsDX12::createDefaultPipelineState()
 
 bool gGraphicsDX12::createCommandLists()
 {
+    if (FAILED(m_cpD3DDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cpCommAllocator))))
+        return false;
+
     return (SUCCEEDED(m_cpD3DDev->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
         m_cpCommAllocator.Get(), m_cpPipelineState[0].Get(), IID_PPV_ARGS(&m_cpCommList))));
 }
@@ -582,7 +589,7 @@ void gGraphicsDX12::PopulateCommandList()
 
 bool gGraphicsDX12::finalize()
 {
-
+    CloseHandle(m_fenceEvent);
 	return true;
 }
 
@@ -606,6 +613,10 @@ void gGraphicsDX12::GetHardwareAdapter(
                 IID_PPV_ARGS(&adapter));
             ++adapterIndex)
         {
+            //ComPtr<IDXGIAdapter4> adapter4;
+            //HRESULT hr = adapter->QueryInterface(IID_PPV_ARGS(&adapter4));
+            //adapter4->QueryVideoMemoryInfo()
+
             DXGI_ADAPTER_DESC1 desc;
             adapter->GetDesc1(&desc);
 
