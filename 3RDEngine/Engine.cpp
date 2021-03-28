@@ -222,7 +222,7 @@ bool g3RDEngine::initialize(const char* config, bool useAsConfigBuffer)
 		// Plug-In Graphics Lib
 #ifdef _WIN32
 #ifdef _DEBUG
-		m_graphicsPlugin.setParameters("GDX12_d.dll", "createGraphicsDX12", "destroyGraphicsDX12");
+		m_graphicsPlugin.setParameters("GDX9_d.dll", "createGraphicsDX9", "destroyGraphicsDX9");
 #else
 		m_graphicsPlugin.setParameters("GDX12.dll", "createGraphicsDX12", "destroyGraphicsDX12");
 #endif
@@ -235,13 +235,14 @@ bool g3RDEngine::initialize(const char* config, bool useAsConfigBuffer)
 		ECHECK(m_spLogger->initialize(), "Failed logger initialization!");
 		ECHECK(m_spConfiguration->initialize(), "Failed load configuration file!");
 		ECHECK(m_spPlatform->initialize(), "Failed platform system initialization!");
-		ECHECK(m_spGraphics->initialize(), "Failed graphics system initialization!");
-
-
-		ELOGMSG("3RD Engine systems initialized successfull!");
 
 		// Show window 
 		m_spPlatform->getWindow()->showWindow(true);
+		ECHECK(m_spGraphics->initialize(), "Failed graphics system initialization!");
+
+		ELOGMSG("3RD Engine systems initialized successfull!");
+
+
 
 		//m_spLogger->logMessage("Message");
 		//m_spLogger->logWarning("Warning");
