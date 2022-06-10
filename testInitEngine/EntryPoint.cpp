@@ -24,7 +24,7 @@
 
 #include<assert.h>
 
-const float G_EPSILON = 6E-6f;
+const float G_EPSILON = 6E-5f;
 
 void compareMatrixes(const D3DXMATRIX& dxM, const gMatrix4& gM)
 {

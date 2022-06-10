@@ -101,8 +101,11 @@ bool gLogger::initialize()
 		return false;
 
 	m_spLogger->print("<!DOCTYPE=html>\n<html>\n<head>\n<title>3RD Game Engine Log File</title>\n<style>\n");
-	m_spLogger->print(".lerror\n{\ncolor: #FF0707;\nborder:2px dotted;\nbackground:#c7c0c0;\n}\n.lwarning\n{\ncolor: #FFFF07;\nborder:2px dotted;\nbackground:#c7c7c0;\n}\n.lmessage\n{\ncolor: #07FF07;\nborder:2px dotted;\nbackground:#c0c7c0;\n}\n");
-	m_spLogger->print("</style>\n</head>\n<body bgcolor=\"#c0c0c0\">\n");
+	m_spLogger->print("\
+.lerror\n{\ncolor: #FF0707;\nborder:2px dotted;\nbackground:#050605;\n}\n\
+.lwarning\n{\ncolor: #FFFF07;\nborder:2px dotted;\nbackground:#050605;\n}\n\
+.lmessage\n{\ncolor: #07FF07;\nborder:2px dotted;\nbackground:#050605;\n}\n");
+	m_spLogger->print("</style>\n</head>\n<body bgcolor=\"#102016\">\n");
 
 	gString sTime;
 	this->logMessage( gString("(") + getDateStr(sTime) + gString(")Starting 3RDE")  );

@@ -224,10 +224,18 @@ bool g3RDEngine::initialize(const char* config, bool useAsConfigBuffer)
 
 		// Plug-In Graphics Lib
 #ifdef _WIN32
-#ifdef _DEBUG
+#if 0
+	#ifdef _DEBUG
 		m_graphicsPlugin.setParameters("GDX9_d.dll", "createGraphicsDX9", "destroyGraphicsDX9");
+	#else
+		m_graphicsPlugin.setParameters("GDX9.dll", "createGraphicsDX9", "destroyGraphicsDX9");
+	#endif
 #else
+	#ifdef _DEBUG
+		m_graphicsPlugin.setParameters("GDX12_d.dll", "createGraphicsDX12", "destroyGraphicsDX12");
+	#else
 		m_graphicsPlugin.setParameters("GDX12.dll", "createGraphicsDX12", "destroyGraphicsDX12");
+	#endif
 #endif
 #endif
 		m_spGraphics = m_graphicsPlugin.createInterface(m_spPlatform, m_spConfiguration);
